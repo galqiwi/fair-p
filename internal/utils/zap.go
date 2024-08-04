@@ -3,6 +3,7 @@ package utils
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"runtime"
 )
 
 func NewLogger(options ...zap.Option) (*zap.Logger, error) {
@@ -28,4 +29,28 @@ func NewLogger(options ...zap.Option) (*zap.Logger, error) {
 		ErrorOutputPaths: []string{"stdout"},
 	}
 	return config.Build(options...)
+}
+
+func LogRuntimeInfo(logger *zap.Logger) {
+	// Memory statistics
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+
+	// General system information
+	numGoroutines := runtime.NumGoroutine()
+	numCPU := runtime.NumCPU()
+	gomaxprocs := runtime.GOMAXPROCS(0)
+	numCgoCalls := runtime.NumCgoCall()
+
+	// Log various runtime and memory statistics
+	logger.Info("Runtime Info",
+		zap.Int("NumGoroutines", numGoroutines),
+		zap.Int("NumCPU", numCPU),
+		zap.Int("GOMAXPROCS", gomaxprocs),
+		zap.Int64("NumCgoCalls", numCgoCalls),
+		zap.Uint64("AllocatedMemory", memStats.Alloc),
+		zap.Uint64("TotalAllocatedMemory", memStats.TotalAlloc),
+		zap.Uint64("SysMemory", memStats.Sys),
+		zap.Uint64("HeapObjects", memStats.HeapObjects),
+	)
 }

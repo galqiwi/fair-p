@@ -24,6 +24,15 @@ func init() {
 	}
 }
 
+func init() {
+	go func() {
+		for {
+			utils.LogRuntimeInfo(logger)
+			time.Sleep(time.Second * 10)
+		}
+	}()
+}
+
 func main() {
 	err := Main()
 	if err != nil {

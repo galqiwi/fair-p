@@ -2,18 +2,74 @@ package main
 
 import (
 	"crypto/tls"
-	"flag"
 	"fmt"
+	"github.com/galqiwi/fair-p/internal/utils"
+	"go.uber.org/zap"
 	"io"
-	"log"
 	"net"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
-func handleTunneling(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r)
+var logger *zap.Logger
 
+func init() {
+	var err error
+	logger, err = utils.NewLogger()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func main() {
+	err := Main()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func Main() error {
+	args := getArgs()
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%v", args.port),
+		Handler: http.HandlerFunc(mainHandler),
+		// Disable HTTP/2.
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
+	}
+
+	return server.ListenAndServe()
+}
+
+func mainHandler(w http.ResponseWriter, r *http.Request) {
+	headers := make([]string, 0, len(r.Header))
+	for name, values := range r.Header {
+		for _, value := range values {
+			headers = append(headers, name+": "+value)
+		}
+	}
+
+	logger.Info("got request",
+		zap.String("method", r.Method),
+		zap.String("url", r.URL.String()),
+		zap.String("host", r.Host),
+		zap.String("remote_addr", r.RemoteAddr),
+		zap.String("user_agent", r.UserAgent()),
+		zap.String("headers", strings.Join(headers, ", ")),
+	)
+
+	if r.Method == http.MethodConnect {
+		handleTunneling(w, r)
+	} else {
+		handleHTTP(w, r)
+	}
+}
+
+func handleTunneling(w http.ResponseWriter, r *http.Request) {
 	dest_conn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -29,54 +85,18 @@ func handleTunneling(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	}
-	go transfer(dest_conn, client_conn)
-	go transfer(client_conn, dest_conn)
-}
-
-func transfer(destination io.WriteCloser, source io.ReadCloser) {
-	defer destination.Close()
-	defer source.Close()
-	io.Copy(destination, source)
+	go utils.Transfer(dest_conn, client_conn)
+	go utils.Transfer(client_conn, dest_conn)
 }
 
 func handleHTTP(w http.ResponseWriter, req *http.Request) {
-	fmt.Println(req)
-
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
 	defer resp.Body.Close()
-	copyHeader(w.Header(), resp.Header)
+	utils.CopyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
-}
-
-func copyHeader(dst, src http.Header) {
-	for k, vv := range src {
-		for _, v := range vv {
-			dst.Add(k, v)
-		}
-	}
-}
-
-func main() {
-	var port int64
-	flag.Int64Var(&port, "port", 8888, "serve port")
-	flag.Parse()
-
-	server := &http.Server{
-		Addr: fmt.Sprintf(":%v", port),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == http.MethodConnect {
-				handleTunneling(w, r)
-			} else {
-				handleHTTP(w, r)
-			}
-		}),
-		// Disable HTTP/2.
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
-	}
-	log.Fatal(server.ListenAndServe())
 }

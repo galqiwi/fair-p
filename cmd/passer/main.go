@@ -62,7 +62,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	logger.Info("got request",
+	logger.Info("Got request",
 		zap.String("method", r.Method),
 		zap.String("url", r.URL.String()),
 		zap.String("host", r.Host),
@@ -77,7 +77,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if strings.HasPrefix(r.URL.String(), "/register") {
-		logger.Info("registered host", zap.String("url", r.URL.String()))
+		logger.Info("Registered host", zap.String("url", r.URL.String()))
 		fmt.Fprintf(w, "ok, thanks :)\n")
 		return
 	}

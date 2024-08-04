@@ -73,6 +73,10 @@ func Main() error {
 		if err != nil {
 			return fmt.Errorf("failed to write: %s\n", err)
 		}
+		err = f.Sync()
+		if err != nil {
+			return fmt.Errorf("failed to sync: %s\n", err)
+		}
 		remaining -= int64(n)
 	}
 	if s.Err() != nil {

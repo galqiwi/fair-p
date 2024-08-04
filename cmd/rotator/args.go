@@ -12,7 +12,7 @@ type args struct {
 
 func getArgs() (args, error) {
 	logPath := flag.String("log_path", "", "log file name")
-	maxSize := flag.Int64("max_size", 10, "max log file size in MB")
+	maxSize := flag.Int64("max_size", 100, "max log file size in MB")
 	flag.Parse()
 
 	if *logPath == "" {

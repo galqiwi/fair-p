@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/galqiwi/fair-p/internal/utils"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -42,15 +42,18 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	var sent int64 = 0
 	var recv int64 = 0
 
+	defer destConn.Close()
+	defer clientConn.Close()
+
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		sent += utils.Transfer(destConn, clientConn)
+		sent, _ = io.Copy(destConn, clientConn)
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		recv += utils.Transfer(clientConn, destConn)
+		sent, _ = io.Copy(clientConn, destConn)
 		wg.Done()
 	}()
 	wg.Wait()

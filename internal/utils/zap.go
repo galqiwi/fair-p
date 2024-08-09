@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"runtime"
+	"net/http"
+	"strings"
 )
 
 func NewLogger(options ...zap.Option) (*zap.Logger, error) {
@@ -31,26 +33,21 @@ func NewLogger(options ...zap.Option) (*zap.Logger, error) {
 	return config.Build(options...)
 }
 
-func LogRuntimeInfo(logger *zap.Logger) {
-	// Memory statistics
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
+func LogHttpRequest(logger *zap.Logger, r *http.Request, traceId uuid.UUID) {
+	headers := make([]string, 0, len(r.Header))
+	for name, values := range r.Header {
+		for _, value := range values {
+			headers = append(headers, name+": "+value)
+		}
+	}
 
-	// General system information
-	numGoroutines := runtime.NumGoroutine()
-	numCPU := runtime.NumCPU()
-	gomaxprocs := runtime.GOMAXPROCS(0)
-	numCgoCalls := runtime.NumCgoCall()
-
-	// Log various runtime and memory statistics
-	logger.Info("Runtime Info",
-		zap.Int("NumGoroutines", numGoroutines),
-		zap.Int("NumCPU", numCPU),
-		zap.Int("GOMAXPROCS", gomaxprocs),
-		zap.Int64("NumCgoCalls", numCgoCalls),
-		zap.Uint64("AllocatedMemory", memStats.Alloc),
-		zap.Uint64("TotalAllocatedMemory", memStats.TotalAlloc),
-		zap.Uint64("SysMemory", memStats.Sys),
-		zap.Uint64("HeapObjects", memStats.HeapObjects),
+	logger.Info("Got request",
+		zap.String("method", r.Method),
+		zap.String("url", r.URL.String()),
+		zap.String("host", r.Host),
+		zap.String("remote_addr", r.RemoteAddr),
+		zap.String("user_agent", r.UserAgent()),
+		zap.String("headers", strings.Join(headers, ", ")),
+		zap.String("trace_id", traceId.String()),
 	)
 }

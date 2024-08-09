@@ -5,10 +5,11 @@ import (
 	"net/http"
 )
 
-func Transfer(destination io.WriteCloser, source io.ReadCloser) {
+func Transfer(destination io.WriteCloser, source io.ReadCloser) int64 {
 	defer destination.Close()
 	defer source.Close()
-	io.Copy(destination, source)
+	written, _ := io.Copy(destination, source)
+	return written
 }
 
 func CopyHeader(dst, src http.Header) {

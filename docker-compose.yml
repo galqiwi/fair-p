@@ -4,8 +4,7 @@ services:
   main:
     restart: always
     build: .
+    network_mode: host
     volumes:
       - ./logs:/logs
     command: sh -c 'chmod 777 /logs && /app/passer --port 8888 | /app/rotator --log_path /logs/passer.log --max_size 100'
-    ports:
-      - "8888:8888"

@@ -5,7 +5,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 COPY ./cmd ./cmd 
 COPY ./internal ./internal
-# COPY ./vendor ./vendor
+COPY ./vendor ./vendor
 
 RUN CGO_ENABLED=0 go build ./cmd/passer/...
 RUN CGO_ENABLED=0 go build ./cmd/rotator/...

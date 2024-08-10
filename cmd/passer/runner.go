@@ -25,7 +25,6 @@ type Runner struct {
 }
 
 func NewRunner(a args) (*Runner, error) {
-	maxThroughput := rate.Limit(1 * 1024 * 1024)
 	burstSize := 2 * 1024 * 1024
 
 	logger, err := utils.NewLogger()
@@ -34,8 +33,8 @@ func NewRunner(a args) (*Runner, error) {
 	}
 	return &Runner{
 		runtimeLogInterval: a.runtimeLogInterval,
-		maxThroughput:      maxThroughput,
-		mainLimiter:        rate.NewLimiter(maxThroughput, burstSize),
+		maxThroughput:      a.maxThroughput,
+		mainLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
 		burstSize:          burstSize,
 		logger:             logger,
 		port:               a.port,

@@ -3,30 +3,44 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/galqiwi/fair-p/internal/utils"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/galqiwi/fair-p/internal/utils"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 type Runner struct {
-	concurrentRequests utils.Counter
 	runtimeLogInterval time.Duration
+	maxThroughput      rate.Limit
+	mainLimiter        *rate.Limiter
+	burstSize          int
 	logger             *zap.Logger
 	port               int
+
+	concurrentRequests *utils.Counter
 }
 
 func NewRunner(a args) (*Runner, error) {
+	maxThroughput := rate.Limit(80 * 1024 * 1024 * 1024)
+	burstSize := 2 * 1024 * 1024
+
 	logger, err := utils.NewLogger()
 	if err != nil {
 		return nil, err
 	}
 	return &Runner{
+		runtimeLogInterval: a.runtimeLogInterval,
+		maxThroughput:      maxThroughput,
+		mainLimiter:        rate.NewLimiter(maxThroughput, burstSize),
+		burstSize:          burstSize,
 		logger:             logger,
 		port:               a.port,
-		runtimeLogInterval: a.runtimeLogInterval,
+
+		concurrentRequests: utils.NewCounter(),
 	}, nil
 }
 

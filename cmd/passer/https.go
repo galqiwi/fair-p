@@ -1,14 +1,13 @@
 package main
 
 import (
-	"github.com/google/uuid"
-	"github.com/sunshineplan/limiter"
-	"go.uber.org/zap"
-	"io"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, traceId uuid.UUID) {
@@ -40,8 +39,8 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	run.logger.Info("Tunnel established", zap.String("client", r.RemoteAddr), zap.String("destination", r.Host),
 		zap.String("trace_id", traceId.String()))
 
-	var sent int64 = 0
-	var recv int64 = 0
+	sentChan := make(chan int64)
+	recvChan := make(chan int64)
 
 	defer destConn.Close()
 	defer clientConn.Close()
@@ -51,28 +50,12 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		lim := limiter.New(1024 * 1024)
-		lim.SetBurst(1024 * 1024 * 5)
+		n, err := run.CopyWithLimiters(destConn, clientConn, run.mainLimiter)
 
-		go func() {
-			for {
-				lim.SetLimit(limiter.Limit(float64(8*80*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
-				time.Sleep(time.Second)
-			}
-		}()
-
-		clientConn := lim.Reader(clientConn)
-
-		var err error
-		sent, err = io.Copy(destConn, clientConn)
-		if err == nil {
-			return
-		}
+		sentChan <- n
 
 		run.logger.Info(
-			"Error during io.Copy(destConn, clientConn)",
-			zap.String("client", r.RemoteAddr),
-			zap.String("destination", r.Host),
+			"Error during copy (send)",
 			zap.String("trace_id", traceId.String()),
 			zap.String("err", err.Error()),
 		)
@@ -81,33 +64,20 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		lim := limiter.New(1024 * 1024)
-		lim.SetBurst(1024 * 1024 * 5)
+		n, err := run.CopyWithLimiters(clientConn, destConn, run.mainLimiter)
 
-		go func() {
-			for {
-				lim.SetLimit(limiter.Limit(float64(8*80*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
-				time.Sleep(time.Second)
-			}
-		}()
-
-		destConn := lim.Reader(destConn)
-
-		var err error
-		recv, err = io.Copy(clientConn, destConn)
-		if err == nil {
-			return
-		}
+		recvChan <- n
 
 		run.logger.Info(
-			"Error during io.Copy(clientConn, destConn)",
-			zap.String("client", r.RemoteAddr),
-			zap.String("destination", r.Host),
+			"Error during copy (recv)",
 			zap.String("trace_id", traceId.String()),
 			zap.String("err", err.Error()),
 		)
 	}()
 	wg.Wait()
+
+	sent := <-sentChan
+	recv := <-recvChan
 
 	run.logger.Info(
 		"Tunnel closed",

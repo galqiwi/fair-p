@@ -14,7 +14,11 @@ func main() {
 }
 
 func Main() error {
-	r, err := NewRunner(getArgs())
+	args, err := getArgs()
+	if err != nil {
+		return err
+	}
+	r, err := NewRunner(args)
 	if err != nil {
 		return err
 	}

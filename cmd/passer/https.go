@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"io"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, traceId uuid.UUID) {
@@ -39,8 +39,8 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	run.logger.Info("Tunnel established", zap.String("client", r.RemoteAddr), zap.String("destination", r.Host),
 		zap.String("trace_id", traceId.String()))
 
-	var sent int64 = 0
-	var recv int64 = 0
+	sentChan := make(chan int64, 1)
+	recvChan := make(chan int64, 1)
 
 	defer destConn.Close()
 	defer clientConn.Close()
@@ -50,16 +50,16 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		var err error
-		sent, err = io.Copy(destConn, clientConn)
+		n, err := run.CopyWithLimiters(destConn, clientConn, run.mainLimiter)
+
+		sentChan <- n
+
 		if err == nil {
 			return
 		}
 
 		run.logger.Info(
-			"Error during io.Copy(destConn, clientConn)",
-			zap.String("client", r.RemoteAddr),
-			zap.String("destination", r.Host),
+			"Error during copy (send)",
 			zap.String("trace_id", traceId.String()),
 			zap.String("err", err.Error()),
 		)
@@ -68,21 +68,24 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		var err error
-		recv, err = io.Copy(clientConn, destConn)
+		n, err := run.CopyWithLimiters(clientConn, destConn, run.mainLimiter)
+
+		recvChan <- n
+
 		if err == nil {
 			return
 		}
 
 		run.logger.Info(
-			"Error during io.Copy(clientConn, destConn)",
-			zap.String("client", r.RemoteAddr),
-			zap.String("destination", r.Host),
+			"Error during copy (recv)",
 			zap.String("trace_id", traceId.String()),
 			zap.String("err", err.Error()),
 		)
 	}()
 	wg.Wait()
+
+	sent := <-sentChan
+	recv := <-recvChan
 
 	run.logger.Info(
 		"Tunnel closed",

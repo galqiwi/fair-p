@@ -1,11 +1,12 @@
 package utils
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"net/http"
-	"strings"
 )
 
 func NewLogger(options ...zap.Option) (*zap.Logger, error) {

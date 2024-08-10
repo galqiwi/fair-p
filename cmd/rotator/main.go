@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"compress/gzip"
 	"fmt"
-	"github.com/galqiwi/fair-p/internal/utils"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/galqiwi/fair-p/internal/utils"
 )
 
 func main() {

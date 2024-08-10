@@ -1,9 +1,10 @@
 package main
 
 import (
-	"go.uber.org/zap"
 	"runtime"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 func (run *Runner) runRuntimeLogLoop() {
@@ -28,6 +29,7 @@ func (run *Runner) logRuntimeInfo() {
 	run.logger.Info("Runtime Info",
 		zap.Int64("NumConcurrentRequests", run.concurrentRequests.Get()),
 		zap.Int("NumGoroutines", numGoroutines),
+		zap.Int64("MainLimiterTokens", int64(run.mainLimiter.Tokens())),
 		zap.Int("NumCPU", numCPU),
 		zap.Int("GOMAXPROCS", gomaxprocs),
 		zap.Int64("NumCgoCalls", numCgoCalls),

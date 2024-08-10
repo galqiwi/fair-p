@@ -64,7 +64,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		hostLimiter := run.hostSendLimiterStorage.GetLimiterHandle(remoteHost)
 		defer hostLimiter.CloseHandle()
 
-		n, err := ratelimit.Copy(destConn, clientConn, []*rate.Limiter{hostLimiter.Limiter, run.mainSendLimiter})
+		n, err := ratelimit.Copy(destConn, clientConn, []*rate.Limiter{run.mainSendLimiter})
 
 		sentChan <- n
 
@@ -85,7 +85,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		hostLimiter := run.hostRecvLimiterStorage.GetLimiterHandle(remoteHost)
 		defer hostLimiter.CloseHandle()
 
-		n, err := ratelimit.Copy(clientConn, destConn, []*rate.Limiter{hostLimiter.Limiter, run.mainSendLimiter})
+		n, err := ratelimit.Copy(clientConn, destConn, []*rate.Limiter{run.mainSendLimiter})
 
 		recvChan <- n
 

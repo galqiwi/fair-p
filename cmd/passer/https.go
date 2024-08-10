@@ -50,7 +50,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		n, err := run.CopyWithLimiters(destConn, clientConn, run.mainLimiter)
+		n, err := run.CopyWithLimiters(destConn, clientConn, run.mainSendLimiter)
 
 		sentChan <- n
 
@@ -68,7 +68,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		n, err := run.CopyWithLimiters(clientConn, destConn, run.mainLimiter)
+		n, err := run.CopyWithLimiters(clientConn, destConn, run.mainRecvLimiter)
 
 		recvChan <- n
 

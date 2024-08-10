@@ -16,12 +16,13 @@ import (
 type Runner struct {
 	runtimeLogInterval time.Duration
 	maxThroughput      rate.Limit
-	mainLimiter        *rate.Limiter
 	burstSize          int
-	logger             *zap.Logger
 	port               int
 
 	concurrentRequests *utils.Counter
+	logger             *zap.Logger
+	mainSendLimiter    *rate.Limiter
+	mainRecvLimiter    *rate.Limiter
 }
 
 func NewRunner(a args) (*Runner, error) {
@@ -34,12 +35,13 @@ func NewRunner(a args) (*Runner, error) {
 	return &Runner{
 		runtimeLogInterval: a.runtimeLogInterval,
 		maxThroughput:      a.maxThroughput,
-		mainLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
 		burstSize:          burstSize,
-		logger:             logger,
 		port:               a.port,
 
 		concurrentRequests: utils.NewCounter(),
+		logger:             logger,
+		mainSendLimiter:    rate.NewLimiter(a.maxThroughput, burstSize),
+		mainRecvLimiter:    rate.NewLimiter(a.maxThroughput, burstSize),
 	}, nil
 }
 

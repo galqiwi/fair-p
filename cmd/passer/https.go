@@ -39,8 +39,8 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	run.logger.Info("Tunnel established", zap.String("client", r.RemoteAddr), zap.String("destination", r.Host),
 		zap.String("trace_id", traceId.String()))
 
-	sentChan := make(chan int64)
-	recvChan := make(chan int64)
+	sentChan := make(chan int64, 1)
+	recvChan := make(chan int64, 1)
 
 	defer destConn.Close()
 	defer clientConn.Close()
@@ -53,6 +53,10 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		n, err := run.CopyWithLimiters(destConn, clientConn, run.mainLimiter)
 
 		sentChan <- n
+
+		if err == nil {
+			return
+		}
 
 		run.logger.Info(
 			"Error during copy (send)",
@@ -67,6 +71,10 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		n, err := run.CopyWithLimiters(clientConn, destConn, run.mainLimiter)
 
 		recvChan <- n
+
+		if err == nil {
+			return
+		}
 
 		run.logger.Info(
 			"Error during copy (recv)",

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/galqiwi/fair-p/internal/ratelimit"
@@ -28,5 +29,8 @@ func (run *Runner) CopyWithLimiters(
 }
 
 func (run *Runner) getSelfLimit(nConcurrentRequests int64) rate.Limit {
-	return rate.Limit(float64(run.maxThroughput) / float64(nConcurrentRequests+1))
+	if nConcurrentRequests <= 0 {
+		panic(fmt.Sprintf("invalid number of concurrent requests: %d", nConcurrentRequests))
+	}
+	return rate.Limit(float64(run.maxThroughput) / float64(nConcurrentRequests))
 }

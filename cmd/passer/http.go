@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	"github.com/galqiwi/fair-p/internal/utils"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 func (run *Runner) handleHTTP(w http.ResponseWriter, req *http.Request, traceId uuid.UUID) {
@@ -23,6 +21,8 @@ func (run *Runner) handleHTTP(w http.ResponseWriter, req *http.Request, traceId 
 	defer resp.Body.Close()
 	utils.CopyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
+
+	// no limiter because no one is using http without TLS nowadays
 	bytesCopied, err := io.Copy(w, resp.Body)
 	if err != nil {
 		run.logger.Info("Error copying response body", zap.String("url", req.URL.String()), zap.String("err", err.Error()),

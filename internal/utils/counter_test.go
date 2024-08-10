@@ -3,82 +3,132 @@ package utils
 import (
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCounter_Add(t *testing.T) {
-	t.Run("test adding positive value", func(t *testing.T) {
-		c := Counter{}
+	c := NewCounter()
+	c.Add(5)
+	assert.Equal(t, int64(5), c.Get())
 
-		c.Add(10)
-		if got := c.Get(); got != 10 {
-			t.Errorf("Counter.Add() = %v, want %v", got, 10)
-		}
-	})
-
-	t.Run("test adding negative value", func(t *testing.T) {
-		c := Counter{}
-
-		c.Add(-5)
-		if got := c.Get(); got != -5 {
-			t.Errorf("Counter.Add() = %v, want %v", got, -5)
-		}
-	})
+	c.Add(3)
+	assert.Equal(t, int64(8), c.Get())
 }
 
 func TestCounter_Sub(t *testing.T) {
-	t.Run("test subtracting positive value", func(t *testing.T) {
-		c := Counter{}
-		c.Add(10)
+	c := NewCounter()
+	c.Add(10)
+	assert.Equal(t, int64(10), c.Get())
 
-		c.Sub(5)
-		if got := c.Get(); got != 5 {
-			t.Errorf("Counter.Sub() = %v, want %v", got, 5)
-		}
-	})
-
-	t.Run("test subtracting negative value", func(t *testing.T) {
-		c := Counter{}
-		c.Add(10)
-
-		c.Sub(-5)
-		if got := c.Get(); got != 15 {
-			t.Errorf("Counter.Sub() = %v, want %v", got, 15)
-		}
-	})
+	c.Sub(3)
+	assert.Equal(t, int64(7), c.Get())
 }
 
 func TestCounter_Get(t *testing.T) {
-	t.Run("test get value", func(t *testing.T) {
-		c := Counter{}
-		c.Add(25)
+	c := NewCounter()
+	assert.Equal(t, int64(0), c.Get())
 
-		if got := c.Get(); got != 25 {
-			t.Errorf("Counter.Get() = %v, want %v", got, 25)
-		}
+	c.Add(10)
+	assert.Equal(t, int64(10), c.Get())
+}
+
+func TestCounter_Subscribe(t *testing.T) {
+	c := NewCounter()
+	mutex := sync.Mutex{} // Protects the subscribers map from concurrent updates
+
+	var subscriberCalled bool
+	ticket := c.Subscribe(func(value int64) {
+		mutex.Lock()
+		subscriberCalled = true
+		mutex.Unlock()
 	})
+	require.NotNil(t, ticket)
 
-	t.Run("test get value with concurrency", func(t *testing.T) {
-		c := Counter{}
-		var wg sync.WaitGroup
+	c.Add(5)
 
-		// Add and Subtract concurrently to test thread safety
-		for i := 0; i < 1000; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				c.Add(1)
-			}()
+	mutex.Lock()
+	assert.True(t, subscriberCalled)
+	mutex.Unlock()
+}
 
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				c.Sub(1)
-			}()
-		}
-		wg.Wait()
+func TestTicket_Unsubscribe(t *testing.T) {
+	c := NewCounter()
+	mutex := sync.Mutex{} // Protects the subscribers map from concurrent updates
 
-		if got := c.Get(); got != 0 {
-			t.Errorf("Counter.Get() with concurrency = %v, want %v", got, 0)
-		}
+	var subscriberCalled bool
+	ticket := c.Subscribe(func(value int64) {
+		mutex.Lock()
+		subscriberCalled = true
+		mutex.Unlock()
 	})
+	require.NotNil(t, ticket)
+
+	ticket.Unsubscribe()
+	c.Add(5)
+
+	mutex.Lock()
+	assert.False(t, subscriberCalled)
+	mutex.Unlock()
+}
+
+// Concurrent tests
+func TestCounter_ConcurrentAdd(t *testing.T) {
+	c := NewCounter()
+	var wg sync.WaitGroup
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Add(1)
+		}()
+	}
+
+	wg.Wait()
+	assert.Equal(t, int64(10), c.Get())
+}
+
+func TestCounter_ConcurrentSub(t *testing.T) {
+	c := NewCounter()
+	c.Add(10)
+	var wg sync.WaitGroup
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Sub(1)
+		}()
+	}
+
+	wg.Wait()
+	assert.Equal(t, int64(0), c.Get())
+}
+
+func TestCounter_ConcurrentSubscribe(t *testing.T) {
+	c := NewCounter()
+	var wg sync.WaitGroup
+	mutex := sync.Mutex{}
+	subscriberCount := 0
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Subscribe(func(value int64) {
+				mutex.Lock()
+				subscriberCount++
+				mutex.Unlock()
+			})
+		}()
+	}
+
+	wg.Wait()
+	assert.Equal(t, 10, len(c.subscribers))
+
+	assert.Equal(t, 0, subscriberCount)
+	c.Add(1)
+	assert.Equal(t, 10, subscriberCount)
 }

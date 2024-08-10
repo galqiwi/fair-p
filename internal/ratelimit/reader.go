@@ -2,7 +2,6 @@ package ratelimit
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"golang.org/x/time/rate"
@@ -21,11 +20,24 @@ func NewRateLimitedReader(r io.Reader, limiter *rate.Limiter) io.Reader {
 }
 
 func (r *reader) Read(p []byte) (n int, err error) {
-	n, err = r.inner.Read(p)
+	toRead := len(p)
+
+	burst := r.limiter.Burst()
+
+	if toRead > burst {
+		toRead = burst
+	}
+
+	if toRead <= 0 {
+		panic("invalid Read")
+	}
+
+	n, err = r.inner.Read(p[:toRead])
 
 	waitErr := r.limiter.WaitN(context.Background(), n)
-
-	err = errors.Join(err, waitErr)
+	if waitErr != nil {
+		panic("invalid limiter.WaitN call")
+	}
 
 	return n, err
 }

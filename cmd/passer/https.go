@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"io"
@@ -50,6 +51,9 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
+		clientConn := bufio.NewReader(clientConn)
+		destConn := bufio.NewWriter(destConn)
+
 		var err error
 		sent, err = io.Copy(destConn, clientConn)
 		if err == nil {
@@ -67,6 +71,9 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		destConn := bufio.NewReader(destConn)
+		clientConn := bufio.NewWriter(clientConn)
 
 		var err error
 		recv, err = io.Copy(clientConn, destConn)

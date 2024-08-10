@@ -74,7 +74,7 @@ func (run *Runner) mainHandler(w http.ResponseWriter, r *http.Request) {
 			zap.String("remote_addr", r.RemoteAddr),
 			zap.String("trace_id", traceId.String()),
 		)
-		_, _ = fmt.Fprintf(w, "Thank you for registering :) (v2)\n")
+		_, _ = fmt.Fprintf(w, "Thank you for registering :)\n")
 		return
 	}
 

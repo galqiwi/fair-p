@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/galqiwi/fair-p/internal/hostlimiters"
 	"net/http"
 	"strings"
 	"time"
@@ -15,15 +16,14 @@ import (
 
 type Runner struct {
 	runtimeLogInterval time.Duration
-	maxThroughput      rate.Limit
-	burstSize          int
 	port               int
 
-	concurrentRequests *utils.Counter
-	concurrentRemotes  *utils.UniqueStringsCounter
-	logger             *zap.Logger
-	mainSendLimiter    *rate.Limiter
-	mainRecvLimiter    *rate.Limiter
+	concurrentRequests     *utils.Counter
+	hostSendLimiterStorage *hostlimiters.HostLimiterStorage
+	hostRecvLimiterStorage *hostlimiters.HostLimiterStorage
+	logger                 *zap.Logger
+	mainSendLimiter        *rate.Limiter
+	mainRecvLimiter        *rate.Limiter
 }
 
 func NewRunner(a args) (*Runner, error) {
@@ -35,15 +35,14 @@ func NewRunner(a args) (*Runner, error) {
 	}
 	return &Runner{
 		runtimeLogInterval: a.runtimeLogInterval,
-		maxThroughput:      a.maxThroughput,
-		burstSize:          burstSize,
 		port:               a.port,
 
-		concurrentRequests: utils.NewCounter(),
-		concurrentRemotes:  utils.NewUniqueStringsCounter(),
-		logger:             logger,
-		mainSendLimiter:    rate.NewLimiter(a.maxThroughput, burstSize),
-		mainRecvLimiter:    rate.NewLimiter(a.maxThroughput, burstSize),
+		concurrentRequests:     utils.NewCounter(),
+		hostSendLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
+		hostRecvLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
+		logger:                 logger,
+		mainSendLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
+		mainRecvLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
 	}, nil
 }
 

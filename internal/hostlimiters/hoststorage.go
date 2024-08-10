@@ -6,13 +6,6 @@ import (
 	"sync"
 )
 
-type HostLimiterHandle struct {
-	*rate.Limiter
-
-	host    string
-	storage *HostLimiterStorage
-}
-
 type HostLimiterStorage struct {
 	mu sync.RWMutex
 
@@ -30,6 +23,20 @@ func NewHostLimiterStorage(maxThroughput rate.Limit, burst int) *HostLimiterStor
 		limiterUsage:  make(map[string]int64),
 		limiters:      make(map[string]*rate.Limiter),
 	}
+}
+
+type HostLimiterHandle struct {
+	*rate.Limiter
+
+	host    string
+	storage *HostLimiterStorage
+}
+
+func (s *HostLimiterStorage) GetNHosts() int64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	s.validateInnerMaps("")
+	return int64(len(s.limiters))
 }
 
 func (s *HostLimiterStorage) GetLimiterHandle(host string) HostLimiterHandle {

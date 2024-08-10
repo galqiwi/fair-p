@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/google/uuid"
+	"github.com/sunshineplan/limiter"
 	"go.uber.org/zap"
 	"io"
 	"net"
@@ -50,6 +51,10 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
+		lim := limiter.New(1024 * 1024)
+
+		clientConn := lim.Reader(clientConn)
+
 		var err error
 		sent, err = io.Copy(destConn, clientConn)
 		if err == nil {
@@ -67,6 +72,10 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		lim := limiter.New(1024 * 1024)
+
+		destConn := lim.Reader(destConn)
 
 		var err error
 		recv, err = io.Copy(clientConn, destConn)

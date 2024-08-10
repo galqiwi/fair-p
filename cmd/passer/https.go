@@ -48,13 +48,39 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		sent, _ = io.Copy(destConn, clientConn)
-		wg.Done()
+		defer wg.Done()
+
+		var err error
+		sent, err = io.Copy(destConn, clientConn)
+		if err == nil {
+			return
+		}
+
+		run.logger.Info(
+			"Error during io.Copy(destConn, clientConn)",
+			zap.String("client", r.RemoteAddr),
+			zap.String("destination", r.Host),
+			zap.String("trace_id", traceId.String()),
+			zap.String("err", err.Error()),
+		)
 	}()
 	wg.Add(1)
 	go func() {
-		sent, _ = io.Copy(clientConn, destConn)
-		wg.Done()
+		defer wg.Done()
+
+		var err error
+		recv, err = io.Copy(clientConn, destConn)
+		if err == nil {
+			return
+		}
+
+		run.logger.Info(
+			"Error during io.Copy(clientConn, destConn)",
+			zap.String("client", r.RemoteAddr),
+			zap.String("destination", r.Host),
+			zap.String("trace_id", traceId.String()),
+			zap.String("err", err.Error()),
+		)
 	}()
 	wg.Wait()
 

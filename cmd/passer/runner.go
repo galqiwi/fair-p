@@ -20,6 +20,7 @@ type Runner struct {
 	port               int
 
 	concurrentRequests *utils.Counter
+	concurrentRemotes  *utils.UniqueStringsCounter
 	logger             *zap.Logger
 	mainSendLimiter    *rate.Limiter
 	mainRecvLimiter    *rate.Limiter
@@ -39,6 +40,7 @@ func NewRunner(a args) (*Runner, error) {
 		port:               a.port,
 
 		concurrentRequests: utils.NewCounter(),
+		concurrentRemotes:  utils.NewUniqueStringsCounter(),
 		logger:             logger,
 		mainSendLimiter:    rate.NewLimiter(a.maxThroughput, burstSize),
 		mainRecvLimiter:    rate.NewLimiter(a.maxThroughput, burstSize),

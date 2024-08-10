@@ -27,6 +27,7 @@ func (run *Runner) logRuntimeInfo() {
 
 	// Log various runtime and memory statistics
 	run.logger.Info("Runtime Info",
+		zap.Int64("concurrentRemotes", run.concurrentRemotes.Get()),
 		zap.Int64("NumConcurrentRequests", run.concurrentRequests.Get()),
 		zap.Int("NumGoroutines", numGoroutines),
 		zap.Int64("MainRecvLimiterTokens", int64(run.mainRecvLimiter.Tokens())),

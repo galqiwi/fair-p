@@ -36,29 +36,3 @@ func (c *Counter) Get() int64 {
 
 	return c.value
 }
-
-type Ticket struct {
-	counter *Counter
-	number  int64
-}
-
-func (c *Counter) Subscribe(callback func(value int64)) *Ticket {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	tickerNumber := c.nSubscribed
-	c.nSubscribed += 1
-
-	c.subscribers[tickerNumber] = callback
-
-	return &Ticket{counter: c, number: tickerNumber}
-}
-
-func (t *Ticket) Unsubscribe() {
-	c := t.counter
-
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	delete(c.subscribers, t.number)
-}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/galqiwi/fair-p/internal/utils"
 	"net"
 	"net/http"
 	"sync"
@@ -13,6 +14,16 @@ import (
 func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, traceId uuid.UUID) {
 	run.concurrentRequests.Add(1)
 	defer run.concurrentRequests.Sub(1)
+
+	remoteHost, err := utils.GetHostFromRemoteAddr(r.RemoteAddr)
+	if err != nil {
+		run.logger.Info("Failed to parse RemoteAddr",
+			zap.String("err", err.Error()),
+			zap.String("trace_id", traceId.String()))
+		remoteHost = "UNKNOWN_HOST"
+	}
+	run.concurrentRemotes.Add(remoteHost)
+	defer run.concurrentRemotes.Remove(remoteHost)
 
 	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {

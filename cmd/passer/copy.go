@@ -14,11 +14,12 @@ func (run *Runner) CopyWithLimiters(
 	mainLimiter *rate.Limiter,
 ) (int64, error) {
 	selfLimiter := rate.NewLimiter(
-		run.getSelfLimit(run.concurrentRequests.Get()),
+		run.getSelfLimit(run.concurrentRemotes.Get()),
 		run.burstSize,
 	)
 
-	token := run.concurrentRequests.Subscribe(func(value int64) {
+	token := run.concurrentRemotes.Subscribe(func(value int64) {
+		fmt.Println(run.getSelfLimit(value))
 		selfLimiter.SetLimit(run.getSelfLimit(value))
 	})
 	defer token.Unsubscribe()
@@ -28,9 +29,9 @@ func (run *Runner) CopyWithLimiters(
 	return n, err
 }
 
-func (run *Runner) getSelfLimit(nConcurrentRequests int64) rate.Limit {
-	if nConcurrentRequests <= 0 {
-		panic(fmt.Sprintf("invalid number of concurrent requests: %d", nConcurrentRequests))
+func (run *Runner) getSelfLimit(nConcurrentRemotes int64) rate.Limit {
+	if nConcurrentRemotes <= 0 {
+		panic(fmt.Sprintf("invalid number of concurrent requests: %d", nConcurrentRemotes))
 	}
-	return rate.Limit(float64(run.maxThroughput) / float64(nConcurrentRequests))
+	return rate.Limit(float64(run.maxThroughput) / float64(nConcurrentRemotes))
 }

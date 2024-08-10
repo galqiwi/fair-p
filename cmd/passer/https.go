@@ -56,7 +56,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 
 		go func() {
 			for {
-				lim.SetLimit(limiter.Limit(float64(60*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
+				lim.SetLimit(limiter.Limit(float64(8*80*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
 				time.Sleep(time.Second)
 			}
 		}()
@@ -86,7 +86,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 
 		go func() {
 			for {
-				lim.SetLimit(limiter.Limit(float64(60*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
+				lim.SetLimit(limiter.Limit(float64(8*80*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
 				time.Sleep(time.Second)
 			}
 		}()

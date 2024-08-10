@@ -52,6 +52,14 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		defer wg.Done()
 
 		lim := limiter.New(1024 * 1024)
+		lim.SetBurst(1024 * 1024 * 5)
+
+		go func() {
+			for {
+				lim.SetLimit(limiter.Limit(float64(60*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
+				time.Sleep(time.Second)
+			}
+		}()
 
 		clientConn := lim.Reader(clientConn)
 
@@ -74,6 +82,14 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		defer wg.Done()
 
 		lim := limiter.New(1024 * 1024)
+		lim.SetBurst(1024 * 1024 * 5)
+
+		go func() {
+			for {
+				lim.SetLimit(limiter.Limit(float64(60*1024*1024*1024) / float64(run.concurrentRequests.Get()+1)))
+				time.Sleep(time.Second)
+			}
+		}()
 
 		destConn := lim.Reader(destConn)
 

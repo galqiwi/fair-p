@@ -3,16 +3,14 @@ package ratelimit
 import (
 	"context"
 	"io"
-
-	"golang.org/x/time/rate"
 )
 
 type reader struct {
 	inner   io.Reader
-	limiter *rate.Limiter
+	limiter Limiter
 }
 
-func NewRateLimitedReader(r io.Reader, limiter *rate.Limiter) io.Reader {
+func NewRateLimitedReader(r io.Reader, limiter Limiter) io.Reader {
 	return &reader{
 		inner:   r,
 		limiter: limiter,

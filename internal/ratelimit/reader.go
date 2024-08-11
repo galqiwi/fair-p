@@ -3,24 +3,19 @@ package ratelimit
 import (
 	"context"
 	"io"
-
-	"github.com/neilotoole/fifomu"
-	"golang.org/x/time/rate"
 )
 
 type reader struct {
 	inner   io.Reader
-	limiter *rate.Limiter
+	limiter *FairLimiter
 }
 
-func NewRateLimitedReader(r io.Reader, limiter *rate.Limiter) io.Reader {
+func NewRateLimitedReader(r io.Reader, limiter *FairLimiter) io.Reader {
 	return &reader{
 		inner:   r,
 		limiter: limiter,
 	}
 }
-
-var mu fifomu.Mutex
 
 func (r *reader) Read(p []byte) (n int, err error) {
 	toRead := len(p)
@@ -37,9 +32,7 @@ func (r *reader) Read(p []byte) (n int, err error) {
 
 	n, err = r.inner.Read(p[:toRead])
 
-	mu.Lock()
 	waitErr := r.limiter.WaitN(context.Background(), n)
-	mu.Unlock()
 
 	if waitErr != nil {
 		panic("invalid limiter.WaitN call")

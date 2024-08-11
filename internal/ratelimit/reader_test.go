@@ -20,7 +20,7 @@ func testCopy(t *testing.T, smallBurst bool) {
 		burst = 1
 	}
 
-	limiter := rate.NewLimiter(100, burst)
+	limiter := NewFairLimiter(100, burst)
 	ratelimitedReader := NewRateLimitedReader(readerData, limiter)
 
 	dst := &strings.Builder{}
@@ -43,26 +43,14 @@ func TestRateLimitedReader_Read(t *testing.T) {
 	})
 }
 
-func TestCopy_NoLimiter(t *testing.T) {
+func TestCopy(t *testing.T) {
 	srcContent := []byte("test content")
-	src := bytes.NewReader(srcContent)
+	var src io.Reader = bytes.NewReader(srcContent)
 	dst := &bytes.Buffer{}
 
-	written, err := Copy(dst, src, []*rate.Limiter{})
-	require.NoError(t, err)
-	assert.Equal(t, int64(len(srcContent)), written)
-	assert.Equal(t, srcContent, dst.Bytes())
-}
-
-func TestCopy_SingleLimiter(t *testing.T) {
-	srcContent := []byte("test content")
-	src := bytes.NewReader(srcContent)
-	dst := &bytes.Buffer{}
-
-	limiter := rate.NewLimiter(rate.Limit(10), 10)
-	limiters := []*rate.Limiter{limiter}
-
-	written, err := Copy(dst, src, limiters)
+	limiter := NewFairLimiter(rate.Limit(10), 10)
+	src = NewRateLimitedReader(src, limiter)
+	written, err := io.Copy(dst, src)
 	require.NoError(t, err)
 	assert.Equal(t, int64(len(srcContent)), written)
 	assert.Equal(t, srcContent, dst.Bytes())
@@ -72,14 +60,4 @@ type ErrorReader struct{}
 
 func (e *ErrorReader) Read(p []byte) (int, error) {
 	return 0, io.ErrUnexpectedEOF
-}
-
-func TestCopy_Error(t *testing.T) {
-	src := &ErrorReader{}
-	dst := &bytes.Buffer{}
-
-	limiters := []*rate.Limiter{}
-
-	_, err := Copy(dst, src, limiters)
-	assert.Error(t, err)
 }

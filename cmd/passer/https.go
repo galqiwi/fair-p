@@ -2,8 +2,7 @@ package main
 
 import (
 	"github.com/galqiwi/fair-p/internal/ratelimit"
-	"github.com/galqiwi/fair-p/internal/utils"
-	"golang.org/x/time/rate"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -17,18 +16,10 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	run.concurrentRequests.Add(1)
 	defer run.concurrentRequests.Sub(1)
 
-	remoteHost, err := utils.GetHostFromRemoteAddr(r.RemoteAddr)
-	if err != nil {
-		run.logger.Info("Failed to parse RemoteAddr",
-			zap.String("err", err.Error()),
-			zap.String("trace_id", traceId.String()))
-		remoteHost = "UNKNOWN_HOST"
-	}
-
 	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
 		run.logger.Info("Error dialing destination", zap.String("host", r.Host), zap.String("err", err.Error()),
-			zap.String("trace_id", traceId.String()), zap.String("remote_host", remoteHost))
+			zap.String("trace_id", traceId.String()))
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
@@ -36,19 +27,19 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
 		run.logger.Info("Hijacking not supported",
-			zap.String("trace_id", traceId.String()), zap.String("remote_host", remoteHost))
+			zap.String("trace_id", traceId.String()))
 		http.Error(w, "Hijacking not supported", http.StatusInternalServerError)
 		return
 	}
 	clientConn, _, err := hijacker.Hijack()
 	if err != nil {
 		run.logger.Info("Hijacking error", zap.String("err", err.Error()),
-			zap.String("trace_id", traceId.String()), zap.String("remote_host", remoteHost))
+			zap.String("trace_id", traceId.String()))
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
 	run.logger.Info("Tunnel established", zap.String("client", r.RemoteAddr), zap.String("destination", r.Host),
-		zap.String("trace_id", traceId.String()), zap.String("remote_host", remoteHost))
+		zap.String("trace_id", traceId.String()))
 
 	sentChan := make(chan int64, 1)
 	recvChan := make(chan int64, 1)
@@ -61,10 +52,9 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		hostLimiter := run.hostSendLimiterStorage.GetLimiterHandle(remoteHost)
-		defer hostLimiter.CloseHandle()
+		clientConn := ratelimit.NewRateLimitedReader(clientConn, run.mainSendLimiter)
 
-		n, err := ratelimit.Copy(destConn, clientConn, []*rate.Limiter{run.mainSendLimiter})
+		n, err := io.Copy(destConn, clientConn)
 
 		sentChan <- n
 
@@ -82,10 +72,9 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	go func() {
 		defer wg.Done()
 
-		hostLimiter := run.hostRecvLimiterStorage.GetLimiterHandle(remoteHost)
-		defer hostLimiter.CloseHandle()
+		destConn := ratelimit.NewRateLimitedReader(destConn, run.mainRecvLimiter)
 
-		n, err := ratelimit.Copy(clientConn, destConn, []*rate.Limiter{run.mainSendLimiter})
+		n, err := io.Copy(clientConn, destConn)
 
 		recvChan <- n
 
@@ -111,6 +100,5 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		zap.Int64("bits_sent", sent),
 		zap.Int64("bits_received", recv),
 		zap.String("trace_id", traceId.String()),
-		zap.String("remote_host", remoteHost),
 	)
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/galqiwi/fair-p/internal/hostlimiters"
+	"github.com/galqiwi/fair-p/internal/ratelimit"
 	"net/http"
 	"strings"
 	"time"
@@ -11,19 +11,16 @@ import (
 	"github.com/galqiwi/fair-p/internal/utils"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 )
 
 type Runner struct {
 	runtimeLogInterval time.Duration
 	port               int
 
-	concurrentRequests     *utils.Counter
-	hostSendLimiterStorage *hostlimiters.HostLimiterStorage
-	hostRecvLimiterStorage *hostlimiters.HostLimiterStorage
-	logger                 *zap.Logger
-	mainSendLimiter        *rate.Limiter
-	mainRecvLimiter        *rate.Limiter
+	concurrentRequests *utils.Counter
+	logger             *zap.Logger
+	mainSendLimiter    *ratelimit.FairLimiter
+	mainRecvLimiter    *ratelimit.FairLimiter
 }
 
 func NewRunner(a args) (*Runner, error) {
@@ -37,12 +34,10 @@ func NewRunner(a args) (*Runner, error) {
 		runtimeLogInterval: a.runtimeLogInterval,
 		port:               a.port,
 
-		concurrentRequests:     utils.NewCounter(),
-		hostSendLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
-		hostRecvLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
-		logger:                 logger,
-		mainSendLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
-		mainRecvLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
+		concurrentRequests: utils.NewCounter(),
+		logger:             logger,
+		mainSendLimiter:    ratelimit.NewFairLimiter(a.maxThroughput, burstSize),
+		mainRecvLimiter:    ratelimit.NewFairLimiter(a.maxThroughput, burstSize),
 	}, nil
 }
 

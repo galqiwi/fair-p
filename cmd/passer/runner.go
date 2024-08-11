@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/galqiwi/fair-p/internal/hostlimiters"
+	"github.com/galqiwi/fair-p/internal/ratelimit"
 	"net/http"
 	"strings"
 	"time"
@@ -22,8 +23,8 @@ type Runner struct {
 	hostSendLimiterStorage *hostlimiters.HostLimiterStorage
 	hostRecvLimiterStorage *hostlimiters.HostLimiterStorage
 	logger                 *zap.Logger
-	mainSendLimiter        *rate.Limiter
-	mainRecvLimiter        *rate.Limiter
+	mainSendLimiter        ratelimit.Limiter
+	mainRecvLimiter        ratelimit.Limiter
 }
 
 func NewRunner(a args) (*Runner, error) {
@@ -41,8 +42,12 @@ func NewRunner(a args) (*Runner, error) {
 		hostSendLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
 		hostRecvLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
 		logger:                 logger,
-		mainSendLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
-		mainRecvLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
+		mainSendLimiter: ratelimit.NewCombinedLimiter(
+			rate.NewLimiter(a.maxThroughput/2, burstSize),
+			rate.NewLimiter(a.maxThroughput/2, burstSize)),
+		mainRecvLimiter: ratelimit.NewCombinedLimiter(
+			rate.NewLimiter(a.maxThroughput/2, burstSize),
+			rate.NewLimiter(a.maxThroughput/2, burstSize)),
 	}, nil
 }
 

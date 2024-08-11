@@ -24,7 +24,9 @@ type Runner struct {
 	hostRecvLimiterStorage *hostlimiters.HostLimiterStorage
 	logger                 *zap.Logger
 	mainSendLimiter        ratelimit.Limiter
+	sharedSendLimiter      ratelimit.Limiter
 	mainRecvLimiter        ratelimit.Limiter
+	sharedRecvLimiter      ratelimit.Limiter
 }
 
 func NewRunner(a args) (*Runner, error) {
@@ -39,15 +41,13 @@ func NewRunner(a args) (*Runner, error) {
 		port:               a.port,
 
 		concurrentRequests:     utils.NewCounter(),
-		hostSendLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
-		hostRecvLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput, burstSize),
+		hostSendLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput/2, burstSize),
+		hostRecvLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput/2, burstSize),
 		logger:                 logger,
-		mainSendLimiter: ratelimit.NewCombinedLimiter(
-			rate.NewLimiter(a.maxThroughput/2, burstSize),
-			rate.NewLimiter(a.maxThroughput/2, burstSize)),
-		mainRecvLimiter: ratelimit.NewCombinedLimiter(
-			rate.NewLimiter(a.maxThroughput/2, burstSize),
-			rate.NewLimiter(a.maxThroughput/2, burstSize)),
+		mainSendLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
+		sharedSendLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
+		mainRecvLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
+		sharedRecvLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
 	}, nil
 }
 

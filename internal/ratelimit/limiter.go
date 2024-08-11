@@ -26,6 +26,9 @@ func (p *combinedLimiter) Burst() int {
 }
 
 func (p *combinedLimiter) WaitN(ctx context.Context, n int) (err error) {
+	if p.guaranteed.AllowN(time.Now(), n) {
+		return nil
+	}
 	if p.shared.Burst() >= n && p.shared.AllowN(time.Now(), n) {
 		return nil
 	}

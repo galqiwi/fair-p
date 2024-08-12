@@ -52,13 +52,12 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	sentChan := make(chan int64, 1)
 	recvChan := make(chan int64, 1)
 
-	defer destConn.Close()
-	defer clientConn.Close()
-
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		defer destConn.Close()
+		defer clientConn.Close()
 
 		hostLimiter := run.hostSendLimiterStorage.GetLimiterHandle(remoteHost)
 		defer hostLimiter.CloseHandle()
@@ -83,6 +82,8 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		defer destConn.Close()
+		defer clientConn.Close()
 
 		hostLimiter := run.hostRecvLimiterStorage.GetLimiterHandle(remoteHost)
 		defer hostLimiter.CloseHandle()

@@ -33,6 +33,8 @@ func (run *Runner) logRuntimeInfo() {
 		zap.Float64("DownloadSpeed (MB/s)", float64(run.mainRecvCounter.GetRate()/1024/1024)),
 		zap.Float64("GuaranteedThroughput(send) (MB/s)", float64(run.hostSendLimiterStorage.GetGuaranteedThroughput()/1024/1024)),
 		zap.Float64("GuaranteedThroughput(recv) (MB/s)", float64(run.hostRecvLimiterStorage.GetGuaranteedThroughput()/1024/1024)),
+		zap.Int64("BitsSent", run.mainSendBitsCounter.Get()),
+		zap.Int64("BitsReceived", run.mainRecvBitsCounter.Get()),
 		zap.Int64("ConcurrentRemotes(send)", run.hostSendLimiterStorage.GetNHosts()),
 		zap.Int64("ConcurrentRemotes(recv)", run.hostRecvLimiterStorage.GetNHosts()),
 		zap.Int64("NumConcurrentRequests", run.concurrentRequests.Get()),
@@ -64,6 +66,8 @@ func (run *Runner) logRuntimeInfoHandler(w http.ResponseWriter, r *http.Request)
 	_, _ = fmt.Fprintf(w, "DownloadSpeed: %.2f MB/s\n", float64(run.mainRecvCounter.GetRate()/1024/1024))
 	_, _ = fmt.Fprintf(w, "GuaranteedThroughput(send): %.2f MB/s\n", float64(run.hostSendLimiterStorage.GetGuaranteedThroughput()/1024/1024))
 	_, _ = fmt.Fprintf(w, "GuaranteedThroughput(recv): %.2f MB/s\n", float64(run.hostRecvLimiterStorage.GetGuaranteedThroughput()/1024/1024))
+	_, _ = fmt.Fprintf(w, "BitsSent: %d\n", run.mainSendBitsCounter.Get())
+	_, _ = fmt.Fprintf(w, "BitsReceived: %d\n", run.mainRecvBitsCounter.Get())
 	_, _ = fmt.Fprintf(w, "ConcurrentRemotes(send): %d\n", run.hostSendLimiterStorage.GetNHosts())
 	_, _ = fmt.Fprintf(w, "ConcurrentRemotes(recv): %d\n", run.hostRecvLimiterStorage.GetNHosts())
 	_, _ = fmt.Fprintf(w, "NumConcurrentRequests: %d\n", run.concurrentRequests.Get())

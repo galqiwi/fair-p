@@ -1,6 +1,9 @@
 package utils
 
-import "sync"
+import (
+	"io"
+	"sync"
+)
 
 type Counter struct {
 	value int64
@@ -35,4 +38,17 @@ func (c *Counter) Get() int64 {
 	defer c.mutex.RUnlock()
 
 	return c.value
+}
+
+type countWriter struct {
+	c *Counter
+}
+
+func (c *Counter) GetCountingWriter() io.Writer {
+	return &countWriter{c}
+}
+
+func (w *countWriter) Write(p []byte) (int, error) {
+	w.c.Add(int64(len(p)))
+	return len(p), nil
 }

@@ -27,9 +27,11 @@ type Runner struct {
 	mainSendLimiter        ratelimit.Limiter
 	sharedSendLimiter      ratelimit.Limiter
 	mainSendCounter        *rate_counter.RateCountingWriter
+	mainSendBitsCounter    *utils.Counter
 	mainRecvLimiter        ratelimit.Limiter
 	sharedRecvLimiter      ratelimit.Limiter
 	mainRecvCounter        *rate_counter.RateCountingWriter
+	mainRecvBitsCounter    *utils.Counter
 }
 
 func NewRunner(a args) (*Runner, error) {
@@ -51,9 +53,11 @@ func NewRunner(a args) (*Runner, error) {
 		mainSendLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
 		sharedSendLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
 		mainSendCounter:        rate_counter.NewRateCountingWriter(rateCounterDuration),
+		mainSendBitsCounter:    utils.NewCounter(),
 		mainRecvLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
 		sharedRecvLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
 		mainRecvCounter:        rate_counter.NewRateCountingWriter(rateCounterDuration),
+		mainRecvBitsCounter:    utils.NewCounter(),
 	}, nil
 }
 

@@ -85,5 +85,10 @@ func (run *Runner) mainHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if strings.HasPrefix(r.URL.String(), "/health") {
+		run.logRuntimeInfoHandler(w, r)
+		return
+	}
+
 	run.handleHTTP(w, r, traceId)
 }

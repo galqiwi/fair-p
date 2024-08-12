@@ -39,6 +39,16 @@ func (s *HostLimiterStorage) GetNHosts() int64 {
 	return int64(len(s.limiters))
 }
 
+func (s *HostLimiterStorage) GetGuaranteedThroughput() rate.Limit {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if len(s.limiters) == 0 {
+		return s.maxThroughput
+	}
+	return getLimit(int64(len(s.limiters)), s.maxThroughput)
+}
+
 func (s *HostLimiterStorage) GetLimiterHandle(host string) HostLimiterHandle {
 	s.mu.Lock()
 	defer s.mu.Unlock()

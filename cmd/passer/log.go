@@ -59,7 +59,6 @@ func (run *Runner) logRuntimeInfoHandler(w http.ResponseWriter, r *http.Request)
 	numCgoCalls := runtime.NumCgoCall()
 
 	// Output various runtime and memory statistics to the response writer
-	_, _ = fmt.Fprintf(w, "Runtime Info:\n")
 	_, _ = fmt.Fprintf(w, "GuaranteedThroughput(send): %.2f MB/s\n", float64(run.hostSendLimiterStorage.GetGuaranteedThroughput()/1024/1024))
 	_, _ = fmt.Fprintf(w, "GuaranteedThroughput(recv): %.2f MB/s\n", float64(run.hostRecvLimiterStorage.GetGuaranteedThroughput()/1024/1024))
 	_, _ = fmt.Fprintf(w, "ConcurrentRemotes(send): %d\n", run.hostSendLimiterStorage.GetNHosts())

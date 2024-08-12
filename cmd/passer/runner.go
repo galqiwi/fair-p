@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/galqiwi/fair-p/internal/hostlimiters"
+	"github.com/galqiwi/fair-p/internal/rate_counter"
 	"github.com/galqiwi/fair-p/internal/ratelimit"
 	"net/http"
 	"strings"
@@ -25,12 +26,15 @@ type Runner struct {
 	logger                 *zap.Logger
 	mainSendLimiter        ratelimit.Limiter
 	sharedSendLimiter      ratelimit.Limiter
+	mainSendCounter        *rate_counter.RateCountingWriter
 	mainRecvLimiter        ratelimit.Limiter
 	sharedRecvLimiter      ratelimit.Limiter
+	mainRecvCounter        *rate_counter.RateCountingWriter
 }
 
 func NewRunner(a args) (*Runner, error) {
 	burstSize := 2 * 1024 * 1024
+	rateCounterDuration := time.Second
 
 	logger, err := utils.NewLogger()
 	if err != nil {
@@ -46,8 +50,10 @@ func NewRunner(a args) (*Runner, error) {
 		logger:                 logger,
 		mainSendLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
 		sharedSendLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
+		mainSendCounter:        rate_counter.NewRateCountingWriter(rateCounterDuration),
 		mainRecvLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
 		sharedRecvLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
+		mainRecvCounter:        rate_counter.NewRateCountingWriter(rateCounterDuration),
 	}, nil
 }
 

@@ -46,7 +46,11 @@ func (r *RateCountingWriter) Write(p []byte) (n int, err error) {
 		r.thisIntervalBits = 0
 	}
 
-	r.thisIntervalBits += int64(len(p))
+	if now.After(r.lastIntervalFinish) {
+		r.thisIntervalBits += int64(len(p))
+	} else {
+		r.lastIntervalBits += int64(len(p))
+	}
 
 	return len(p), nil
 }
@@ -57,7 +61,7 @@ func (r *RateCountingWriter) GetRate() Rate {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	for now.After(r.lastIntervalFinish.Add(r.intervalDuration)) {
+	for now.After(r.lastIntervalFinish.Add(r.intervalDuration * 2)) {
 		r.mu.RUnlock()
 		// updates interval statistics
 		_, _ = r.Write(nil)

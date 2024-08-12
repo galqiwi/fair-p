@@ -64,7 +64,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		defer hostLimiter.CloseHandle()
 
 		n, err := ratelimit.Copy(
-			io.MultiWriter(destConn, run.mainSendCounter, run.mainSendBitsCounter.GetCountingWriter()),
+			io.MultiWriter(destConn, run.mainSendRateCounter, run.mainSendBitsCounter.GetCountingWriter()),
 			clientConn,
 			[]ratelimit.Limiter{
 				ratelimit.NewCombinedLimiter(hostLimiter.Limiter, run.sharedSendLimiter),
@@ -94,7 +94,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		defer hostLimiter.CloseHandle()
 
 		n, err := ratelimit.Copy(
-			io.MultiWriter(clientConn, run.mainRecvCounter, run.mainRecvBitsCounter.GetCountingWriter()),
+			io.MultiWriter(clientConn, run.mainRecvRateCounter, run.mainRecvBitsCounter.GetCountingWriter()),
 			destConn,
 			[]ratelimit.Limiter{
 				ratelimit.NewCombinedLimiter(hostLimiter.Limiter, run.sharedRecvLimiter),

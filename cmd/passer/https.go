@@ -47,12 +47,17 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	sentChan := make(chan int64, 1)
 	recvChan := make(chan int64, 1)
 
+	closingSideChan := make(chan string, 2)
+
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer destConn.Close()
-		defer clientConn.Close()
+		defer func() {
+			closingSideChan <- "send"
+			destConn.Close()
+			clientConn.Close()
+		}()
 
 		hostLimiter := run.hostSendLimiterStorage.GetLimiterHandle(remoteHost)
 		defer hostLimiter.CloseHandle()
@@ -81,8 +86,11 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer destConn.Close()
-		defer clientConn.Close()
+		defer func() {
+			closingSideChan <- "recv"
+			destConn.Close()
+			clientConn.Close()
+		}()
 
 		hostLimiter := run.hostRecvLimiterStorage.GetLimiterHandle(remoteHost)
 		defer hostLimiter.CloseHandle()
@@ -113,6 +121,8 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	sent := <-sentChan
 	recv := <-recvChan
 
+	closingSide := <-closingSideChan
+
 	run.logger.Info(
 		"Tunnel closed",
 		zap.String("client", r.RemoteAddr),
@@ -121,5 +131,6 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 		zap.Int64("bits_received", recv),
 		zap.String("trace_id", traceId.String()),
 		zap.String("remote_host", remoteHost),
+		zap.Any("closing_side", closingSide),
 	)
 }

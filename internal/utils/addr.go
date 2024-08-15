@@ -18,3 +18,11 @@ func GetHostFromRemoteAddr(remoteAddr string) (string, error) {
 
 	return parsedIP.String(), nil
 }
+
+func TryGettingHostFromRemoteAddr(remoteAddr string) string {
+	remoteHost, err := GetHostFromRemoteAddr(remoteAddr)
+	if err != nil {
+		remoteHost = "UNKNOWN_HOST"
+	}
+	return remoteHost
+}

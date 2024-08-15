@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/galqiwi/fair-p/internal/utils"
 	"net/http"
 	"runtime"
 	"time"
@@ -52,6 +54,22 @@ func (run *Runner) logRuntimeInfo() {
 }
 
 func (run *Runner) logRuntimeInfoHandler(w http.ResponseWriter, r *http.Request) {
+	remoteHost := utils.TryGettingHostFromRemoteAddr(r.RemoteAddr)
+	hostLimiter := run.hostHealthLimiterStorage.GetLimiterHandle(remoteHost)
+
+	defer func() {
+		go func() {
+			limiterPeriod := time.Duration(float64(time.Second) / float64(hostLimiter.Limit()))
+			time.Sleep(limiterPeriod * 2)
+			hostLimiter.CloseHandle()
+		}()
+	}()
+
+	err := hostLimiter.WaitN(context.Background(), 1)
+	if err != nil {
+		panic(err)
+	}
+
 	// Memory statistics
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)

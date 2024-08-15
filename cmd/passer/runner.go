@@ -20,23 +20,27 @@ type Runner struct {
 	runtimeLogInterval time.Duration
 	port               int
 
-	concurrentRequests     *utils.Counter
-	hostSendLimiterStorage *hostlimiters.HostLimiterStorage
-	hostRecvLimiterStorage *hostlimiters.HostLimiterStorage
-	logger                 *zap.Logger
-	mainSendLimiter        ratelimit.Limiter
-	sharedSendLimiter      ratelimit.Limiter
-	mainSendRateCounter    *rate_counter.RateCountingWriter
-	mainSendBitsCounter    *utils.Counter
-	mainRecvLimiter        ratelimit.Limiter
-	sharedRecvLimiter      ratelimit.Limiter
-	mainRecvRateCounter    *rate_counter.RateCountingWriter
-	mainRecvBitsCounter    *utils.Counter
+	concurrentRequests       *utils.Counter
+	hostHealthLimiterStorage *hostlimiters.HostLimiterStorage
+	hostSendLimiterStorage   *hostlimiters.HostLimiterStorage
+	hostRecvLimiterStorage   *hostlimiters.HostLimiterStorage
+	logger                   *zap.Logger
+	mainSendLimiter          ratelimit.Limiter
+	sharedSendLimiter        ratelimit.Limiter
+	mainSendRateCounter      *rate_counter.RateCountingWriter
+	mainSendBitsCounter      *utils.Counter
+	mainRecvLimiter          ratelimit.Limiter
+	sharedRecvLimiter        ratelimit.Limiter
+	mainRecvRateCounter      *rate_counter.RateCountingWriter
+	mainRecvBitsCounter      *utils.Counter
 }
 
 func NewRunner(a args) (*Runner, error) {
 	burstSize := 2 * 1024 * 1024
 	rateCounterDuration := time.Second
+
+	healthLimit := rate.Every(time.Second)
+	healthBurst := 3
 
 	logger, err := utils.NewLogger()
 	if err != nil {
@@ -46,18 +50,19 @@ func NewRunner(a args) (*Runner, error) {
 		runtimeLogInterval: a.runtimeLogInterval,
 		port:               a.port,
 
-		concurrentRequests:     utils.NewCounter(),
-		hostSendLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput/2, burstSize),
-		hostRecvLimiterStorage: hostlimiters.NewHostLimiterStorage(a.maxThroughput/2, burstSize),
-		logger:                 logger,
-		mainSendLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
-		sharedSendLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
-		mainSendRateCounter:    rate_counter.NewRateCountingWriter(rateCounterDuration),
-		mainSendBitsCounter:    utils.NewCounter(),
-		mainRecvLimiter:        rate.NewLimiter(a.maxThroughput, burstSize),
-		sharedRecvLimiter:      rate.NewLimiter(a.maxThroughput/2, burstSize),
-		mainRecvRateCounter:    rate_counter.NewRateCountingWriter(rateCounterDuration),
-		mainRecvBitsCounter:    utils.NewCounter(),
+		concurrentRequests:       utils.NewCounter(),
+		hostHealthLimiterStorage: hostlimiters.NewHostLimiterStorage(healthLimit, healthBurst),
+		hostSendLimiterStorage:   hostlimiters.NewHostLimiterStorage(a.maxThroughput/2, burstSize),
+		hostRecvLimiterStorage:   hostlimiters.NewHostLimiterStorage(a.maxThroughput/2, burstSize),
+		logger:                   logger,
+		mainSendLimiter:          rate.NewLimiter(a.maxThroughput, burstSize),
+		sharedSendLimiter:        rate.NewLimiter(a.maxThroughput/2, burstSize),
+		mainSendRateCounter:      rate_counter.NewRateCountingWriter(rateCounterDuration),
+		mainSendBitsCounter:      utils.NewCounter(),
+		mainRecvLimiter:          rate.NewLimiter(a.maxThroughput, burstSize),
+		sharedRecvLimiter:        rate.NewLimiter(a.maxThroughput/2, burstSize),
+		mainRecvRateCounter:      rate_counter.NewRateCountingWriter(rateCounterDuration),
+		mainRecvBitsCounter:      utils.NewCounter(),
 	}, nil
 }
 

@@ -17,13 +17,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 	run.concurrentRequests.Add(1)
 	defer run.concurrentRequests.Sub(1)
 
-	remoteHost, err := utils.GetHostFromRemoteAddr(r.RemoteAddr)
-	if err != nil {
-		run.logger.Info("Failed to parse RemoteAddr",
-			zap.String("err", err.Error()),
-			zap.String("trace_id", traceId.String()))
-		remoteHost = "UNKNOWN_HOST"
-	}
+	remoteHost := utils.TryGettingHostFromRemoteAddr(r.RemoteAddr)
 
 	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {

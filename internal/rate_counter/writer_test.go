@@ -37,9 +37,21 @@ func TestRateCountingWriter_Get(t *testing.T) {
 
 	time.Sleep(3 * tick)
 
+	n, err = rateCounter.Write(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, n)
+
 	assert.Equal(t, Rate(float64(len(data))/(2*tick).Seconds()), rateCounter.GetRate())
 
 	time.Sleep(3 * tick)
+
+	n, err = rateCounter.Write(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, n)
+
+	assert.Equal(t, Rate(0), rateCounter.GetRate())
+
+	time.Sleep(6 * tick)
 
 	assert.Equal(t, Rate(0), rateCounter.GetRate())
 }
@@ -63,6 +75,10 @@ func TestRateCountingWriter_Concurrent(t *testing.T) {
 	wg.Wait()
 
 	time.Sleep(3 * tick)
+
+	n, err := rateCounter.Write(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, n)
 
 	for i := 0; i < 10; i++ {
 		wg.Add(1)

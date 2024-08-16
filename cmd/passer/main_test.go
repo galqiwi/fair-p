@@ -132,11 +132,11 @@ func TestProxy(t *testing.T) {
 	t.Run("http", func(t *testing.T) {
 		testProxy(t, false, 1)
 		testProxy(t, false, 4)
-		// testProxy(t, false, 16)
+		testProxy(t, false, 16)
 	})
 	t.Run("https", func(t *testing.T) {
 		testProxy(t, true, 1)
 		testProxy(t, true, 4)
-		// testProxy(t, true, 16)
+		testProxy(t, true, 16)
 	})
 }

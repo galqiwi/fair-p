@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"github.com/galqiwi/fair-p/internal/testtool"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"sync"
 	"testing"
 	"time"
 )
@@ -61,43 +62,81 @@ func startProxy(t *testing.T) (port string, stop func()) {
 	return
 }
 
-func TestProxy(t *testing.T) {
-	echoService := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.Copy(w, r.Body)
-		defer func() { _ = r.Body.Close() }()
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
-	}))
-	defer echoService.Close()
-
-	port, cleanup := startProxy(t)
-	defer cleanup()
-
+func testProxyWithEchoService(t *testing.T, port string, echoService *httptest.Server) {
 	proxy, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%s", port))
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
+	msg := "hello world"
 
 	client := &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyURL(proxy),
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		},
 	}
-
-	msg := "hello world"
 
 	request, err := http.NewRequest(
 		"POST",
 		echoService.URL,
 		bytes.NewBufferString(msg),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	request.Header.Set("Content-Type", "text/plain")
 
 	response, err := client.Do(request)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, response.StatusCode)
+	require.NoError(t, err)
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, msg, string(body))
+	require.Equal(t, http.StatusOK, response.StatusCode)
+
+	require.Equal(t, msg, string(body))
+}
+
+func testProxy(t *testing.T, testTLS bool, nRequests int) {
+	echoHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(w, r.Body)
+		defer func() { _ = r.Body.Close() }()
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
+	})
+
+	var echoService *httptest.Server
+	if testTLS {
+		echoService = httptest.NewTLSServer(echoHandler)
+	} else {
+		echoService = httptest.NewServer(echoHandler)
+	}
+	defer echoService.Close()
+
+	port, cleanup := startProxy(t)
+	defer cleanup()
+
+	var wg sync.WaitGroup
+
+	wg.Add(nRequests)
+	for i := 0; i < nRequests; i++ {
+		go func() {
+			defer wg.Done()
+			testProxyWithEchoService(t, port, echoService)
+		}()
+	}
+
+	wg.Wait()
+}
+
+func TestProxy(t *testing.T) {
+	t.Run("http", func(t *testing.T) {
+		testProxy(t, false, 1)
+		testProxy(t, false, 4)
+		// testProxy(t, false, 16)
+	})
+	t.Run("https", func(t *testing.T) {
+		testProxy(t, true, 1)
+		testProxy(t, true, 4)
+		// testProxy(t, true, 16)
+	})
 }

@@ -1,7 +1,6 @@
 package rate_counter
 
 import (
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 	"sync"
@@ -21,7 +20,7 @@ func TestRateCountingWriter_Write(t *testing.T) {
 	n, err := rateCounter.Write(data)
 
 	require.NoError(t, err)
-	assert.Equal(t, len(data), n)
+	require.Equal(t, len(data), n)
 }
 
 func TestRateCountingWriter_Get(t *testing.T) {
@@ -31,21 +30,21 @@ func TestRateCountingWriter_Get(t *testing.T) {
 	data := []byte("test data")
 	n, err := rateCounter.Write(data)
 	require.NoError(t, err)
-	assert.Equal(t, len(data), n)
+	require.Equal(t, len(data), n)
 
-	assert.Equal(t, Rate(0), rateCounter.GetRate())
+	require.Equal(t, Rate(0), rateCounter.GetRate())
 
 	time.Sleep(3 * tick)
 
 	n, err = rateCounter.Write(nil)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, n)
+	require.NoError(t, err)
+	require.Equal(t, 0, n)
 
-	assert.Equal(t, Rate(float64(len(data))/(2*tick).Seconds()), rateCounter.GetRate())
+	require.Equal(t, Rate(float64(len(data))/(2*tick).Seconds()), rateCounter.GetRate())
 
 	time.Sleep(6 * tick)
 
-	assert.Equal(t, Rate(0), rateCounter.GetRate())
+	require.Equal(t, Rate(0), rateCounter.GetRate())
 }
 
 func TestRateCountingWriter_Concurrent(t *testing.T) {
@@ -60,8 +59,8 @@ func TestRateCountingWriter_Concurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			n, err := rateCounter.Write(data)
-			assert.NoError(t, err)
-			assert.Equal(t, len(data), n)
+			require.NoError(t, err)
+			require.Equal(t, len(data), n)
 		}()
 	}
 	wg.Wait()
@@ -69,14 +68,14 @@ func TestRateCountingWriter_Concurrent(t *testing.T) {
 	time.Sleep(3 * tick)
 
 	n, err := rateCounter.Write(nil)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, n)
+	require.NoError(t, err)
+	require.Equal(t, 0, n)
 
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			assert.Equal(t, Rate(float64(len(data))/(2*tick).Seconds())*10, rateCounter.GetRate())
+			require.Equal(t, Rate(float64(len(data))/(2*tick).Seconds())*10, rateCounter.GetRate())
 		}()
 	}
 	for i := 0; i < 10; i++ {
@@ -84,12 +83,12 @@ func TestRateCountingWriter_Concurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			n, err := rateCounter.Write(data)
-			assert.NoError(t, err)
-			assert.Equal(t, len(data), n)
+			require.NoError(t, err)
+			require.Equal(t, len(data), n)
 		}()
 	}
 	wg.Wait()
 
 	time.Sleep(2 * tick)
-	assert.Equal(t, Rate(float64(len(data))/(2*tick).Seconds())*10, rateCounter.GetRate())
+	require.Equal(t, Rate(float64(len(data))/(2*tick).Seconds())*10, rateCounter.GetRate())
 }

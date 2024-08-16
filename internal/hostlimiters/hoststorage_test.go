@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 )
@@ -20,17 +19,17 @@ func TestHostLimiterStorage_GetLimiterHandle(t *testing.T) {
 	handle := hls.GetLimiterHandle(host)
 	require.NotNil(t, handle.Limiter)
 
-	assert.Equal(t, handle.host, host)
-	assert.Equal(t, handle.storage, hls)
-	assert.Equal(t, handle.Limiter, hls.limiters[host])
-	assert.Equal(t, int64(1), hls.limiterUsage[host])
+	require.Equal(t, handle.host, host)
+	require.Equal(t, handle.storage, hls)
+	require.Equal(t, handle.Limiter, hls.limiters[host])
+	require.Equal(t, int64(1), hls.limiterUsage[host])
 
 	handle.CloseHandle()
 
 	_, exists := hls.limiters[host]
-	assert.False(t, exists)
+	require.False(t, exists)
 	_, exists = hls.limiterUsage[host]
-	assert.False(t, exists)
+	require.False(t, exists)
 }
 
 func TestHostLimiterStorage_Concurrency(t *testing.T) {
@@ -56,6 +55,6 @@ func TestHostLimiterStorage_Concurrency(t *testing.T) {
 
 	wg.Wait()
 
-	assert.Empty(t, hls.limiters)
-	assert.Empty(t, hls.limiterUsage)
+	require.Empty(t, hls.limiters)
+	require.Empty(t, hls.limiterUsage)
 }

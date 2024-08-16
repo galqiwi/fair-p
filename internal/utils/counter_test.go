@@ -1,36 +1,35 @@
 package utils
 
 import (
+	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCounter_Add(t *testing.T) {
 	c := NewCounter()
 	c.Add(5)
-	assert.Equal(t, int64(5), c.Get())
+	require.Equal(t, int64(5), c.Get())
 
 	c.Add(3)
-	assert.Equal(t, int64(8), c.Get())
+	require.Equal(t, int64(8), c.Get())
 }
 
 func TestCounter_Sub(t *testing.T) {
 	c := NewCounter()
 	c.Add(10)
-	assert.Equal(t, int64(10), c.Get())
+	require.Equal(t, int64(10), c.Get())
 
 	c.Sub(3)
-	assert.Equal(t, int64(7), c.Get())
+	require.Equal(t, int64(7), c.Get())
 }
 
 func TestCounter_Get(t *testing.T) {
 	c := NewCounter()
-	assert.Equal(t, int64(0), c.Get())
+	require.Equal(t, int64(0), c.Get())
 
 	c.Add(10)
-	assert.Equal(t, int64(10), c.Get())
+	require.Equal(t, int64(10), c.Get())
 }
 
 func TestCounter_ConcurrentAdd(t *testing.T) {
@@ -46,7 +45,7 @@ func TestCounter_ConcurrentAdd(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.Equal(t, int64(10), c.Get())
+	require.Equal(t, int64(10), c.Get())
 }
 
 func TestCounter_ConcurrentSub(t *testing.T) {
@@ -63,5 +62,5 @@ func TestCounter_ConcurrentSub(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.Equal(t, int64(0), c.Get())
+	require.Equal(t, int64(0), c.Get())
 }

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 )
@@ -30,7 +29,7 @@ func testCopy(t *testing.T, smallBurst bool) {
 	require.Equal(t, len(data), int(n), "Expected to read correct number of bytes")
 
 	output := dst.String()
-	assert.Equal(t, data, output, "Expected to read correct data")
+	require.Equal(t, data, output, "Expected to read correct data")
 }
 
 func TestRateLimitedReader_Read(t *testing.T) {
@@ -50,8 +49,8 @@ func TestCopy_NoLimiter(t *testing.T) {
 
 	written, err := Copy(dst, src, []Limiter{})
 	require.NoError(t, err)
-	assert.Equal(t, int64(len(srcContent)), written)
-	assert.Equal(t, srcContent, dst.Bytes())
+	require.Equal(t, int64(len(srcContent)), written)
+	require.Equal(t, srcContent, dst.Bytes())
 }
 
 func TestCopy_SingleLimiter(t *testing.T) {
@@ -64,8 +63,8 @@ func TestCopy_SingleLimiter(t *testing.T) {
 
 	written, err := Copy(dst, src, limiters)
 	require.NoError(t, err)
-	assert.Equal(t, int64(len(srcContent)), written)
-	assert.Equal(t, srcContent, dst.Bytes())
+	require.Equal(t, int64(len(srcContent)), written)
+	require.Equal(t, srcContent, dst.Bytes())
 }
 
 type ErrorReader struct{}
@@ -81,5 +80,5 @@ func TestCopy_Error(t *testing.T) {
 	limiters := []Limiter{}
 
 	_, err := Copy(dst, src, limiters)
-	assert.Error(t, err)
+	require.Error(t, err)
 }

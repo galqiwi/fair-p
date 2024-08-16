@@ -1,9 +1,7 @@
 package main
 
 import (
-	"github.com/galqiwi/fair-p/internal/ratelimit"
 	"github.com/galqiwi/fair-p/internal/utils"
-	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -59,17 +57,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 			clientConn.Close()
 		}()
 
-		hostLimiter := run.hostSendLimiterStorage.GetLimiterHandle(remoteHost)
-		defer hostLimiter.CloseHandle()
-
-		n, err := ratelimit.Copy(
-			io.MultiWriter(destConn, run.mainSendRateCounter, run.mainSendBitsCounter.GetCountingWriter()),
-			clientConn,
-			[]ratelimit.Limiter{
-				ratelimit.NewCombinedLimiter(hostLimiter.Limiter, run.sharedSendLimiter),
-				run.mainSendLimiter,
-			},
-		)
+		n, err := run.CopySend(destConn, clientConn, remoteHost)
 
 		sentChan <- n
 
@@ -92,17 +80,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, trace
 			clientConn.Close()
 		}()
 
-		hostLimiter := run.hostRecvLimiterStorage.GetLimiterHandle(remoteHost)
-		defer hostLimiter.CloseHandle()
-
-		n, err := ratelimit.Copy(
-			io.MultiWriter(clientConn, run.mainRecvRateCounter, run.mainRecvBitsCounter.GetCountingWriter()),
-			destConn,
-			[]ratelimit.Limiter{
-				ratelimit.NewCombinedLimiter(hostLimiter.Limiter, run.sharedRecvLimiter),
-				run.mainRecvLimiter,
-			},
-		)
+		n, err := run.CopyRecv(clientConn, destConn, remoteHost)
 
 		recvChan <- n
 

@@ -1,11 +1,9 @@
 package main
 
 import (
-	"github.com/galqiwi/fair-p/internal/ratelimit"
 	"github.com/galqiwi/fair-p/internal/utils"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"io"
 	"net/http"
 )
 
@@ -36,16 +34,7 @@ func (run *Runner) handleHTTP(w http.ResponseWriter, r *http.Request, traceId uu
 	utils.CopyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 
-	hostLimiter := run.hostRecvLimiterStorage.GetLimiterHandle(remoteHost)
-	defer hostLimiter.CloseHandle()
-	recv, err := ratelimit.Copy(
-		io.MultiWriter(w, run.mainRecvRateCounter, run.mainRecvBitsCounter.GetCountingWriter()),
-		resp.Body,
-		[]ratelimit.Limiter{
-			ratelimit.NewCombinedLimiter(hostLimiter.Limiter, run.sharedRecvLimiter),
-			run.mainRecvLimiter,
-		},
-	)
+	recv, err := run.CopyRecv(w, resp.Body, remoteHost)
 
 	if err != nil {
 		run.logger.Info("Error copying response body",

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -34,7 +33,7 @@ func NewLogger(options ...zap.Option) (*zap.Logger, error) {
 	return config.Build(options...)
 }
 
-func LogHttpRequest(logger *zap.Logger, r *http.Request, traceId uuid.UUID) {
+func LogHttpRequest(logger *zap.Logger, r *http.Request) {
 	headers := make([]string, 0, len(r.Header))
 	for name, values := range r.Header {
 		for _, value := range values {
@@ -49,6 +48,5 @@ func LogHttpRequest(logger *zap.Logger, r *http.Request, traceId uuid.UUID) {
 		zap.String("remote_addr", r.RemoteAddr),
 		zap.String("user_agent", r.UserAgent()),
 		zap.String("headers", strings.Join(headers, ", ")),
-		zap.String("trace_id", traceId.String()),
 	)
 }

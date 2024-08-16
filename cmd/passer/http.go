@@ -2,31 +2,29 @@ package main
 
 import (
 	"github.com/galqiwi/fair-p/internal/utils"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-func (run *Runner) handleHTTP(w http.ResponseWriter, r *http.Request, traceId uuid.UUID) {
+func (run *Runner) handleHTTP(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 	run.concurrentRequests.Add(1)
 	defer run.concurrentRequests.Sub(1)
 
 	remoteHost := utils.TryGettingHostFromRemoteAddr(r.RemoteAddr)
 
-	run.logger.Info("Handling HTTP request",
+	logger = logger.With(
 		zap.String("url", r.URL.String()),
-		zap.String("remote_host", remoteHost),
-		zap.String("trace_id", traceId.String()),
+		zap.String("destination", r.Host),
+		zap.String("client_host", remoteHost),
+		zap.String("client", r.RemoteAddr),
 	)
+
+	logger.Info("Handling HTTP request")
 
 	// TODO: upload limiter?
 	resp, err := http.DefaultTransport.RoundTrip(r)
 	if err != nil {
-		run.logger.Info("RoundTrip error",
-			zap.String("url", r.URL.String()),
-			zap.String("err", err.Error()),
-			zap.String("trace_id", traceId.String()),
-		)
+		logger.Info("RoundTrip error", zap.String("err", err.Error()))
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
@@ -37,17 +35,10 @@ func (run *Runner) handleHTTP(w http.ResponseWriter, r *http.Request, traceId uu
 	recv, err := run.CopyRecv(w, resp.Body, remoteHost)
 
 	if err != nil {
-		run.logger.Info("Error copying response body",
-			zap.String("url", r.URL.String()),
-			zap.String("err", err.Error()),
-			zap.String("trace_id", traceId.String()),
-		)
+		logger.Info("Error copying response body", zap.String("err", err.Error()))
 		return
 	}
-	run.logger.Info("HTTP response forwarded",
-		zap.String("remote_host", remoteHost),
-		zap.String("url", r.URL.String()),
+	logger.Info("HTTP response forwarded",
 		zap.Int64("bits_received", recv),
-		zap.String("trace_id", traceId.String()),
 	)
 }

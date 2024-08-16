@@ -82,19 +82,20 @@ func (run *Runner) Run() error {
 func (run *Runner) mainHandler(w http.ResponseWriter, r *http.Request) {
 	traceId := uuid.New()
 
-	utils.LogHttpRequest(run.logger, r, traceId)
+	logger := run.logger.With(zap.String("trace_id", traceId.String()))
+
+	utils.LogHttpRequest(logger, r)
 
 	if r.Method == http.MethodConnect {
-		run.handleTunneling(w, r, traceId)
+		run.handleTunneling(w, r, logger)
 		return
 	}
 
 	if strings.HasPrefix(r.URL.String(), "/register") {
-		run.logger.Info(
+		logger.Info(
 			"Registered host",
 			zap.String("url", r.URL.String()),
-			zap.String("remote_addr", r.RemoteAddr),
-			zap.String("trace_id", traceId.String()),
+			zap.String("client", r.RemoteAddr),
 		)
 		_, _ = fmt.Fprintf(w, "Thank you for registering :)\n")
 		return
@@ -105,5 +106,5 @@ func (run *Runner) mainHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	run.handleHTTP(w, r, traceId)
+	run.handleHTTP(w, r, logger)
 }

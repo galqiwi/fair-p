@@ -96,8 +96,8 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, logge
 
 	logger.Info(
 		"Tunnel closed",
-		zap.Int64("bits_sent", sent),
-		zap.Int64("bits_received", recv),
+		zap.Int64("bytes_sent", sent),
+		zap.Int64("bytes_received", recv),
 		zap.Any("closing_side", closingSide),
 	)
 }

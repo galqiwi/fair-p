@@ -9,7 +9,7 @@ func (run *Runner) CopyRecv(dst io.Writer, src io.Reader, remoteHost string) (in
 	hostLimiter := run.hostRecvLimiterStorage.GetLimiterHandle(remoteHost)
 	defer hostLimiter.CloseHandle()
 	return ratelimit.Copy(
-		io.MultiWriter(dst, run.mainRecvRateCounter, run.mainRecvBitsCounter.GetCountingWriter()),
+		io.MultiWriter(dst, run.mainRecvRateCounter, run.mainRecvBytesCounter.GetCountingWriter()),
 		src,
 		[]ratelimit.Limiter{
 			ratelimit.NewCombinedLimiter(hostLimiter.Limiter, run.sharedRecvLimiter),
@@ -22,7 +22,7 @@ func (run *Runner) CopySend(dst io.Writer, src io.Reader, remoteHost string) (in
 	hostLimiter := run.hostSendLimiterStorage.GetLimiterHandle(remoteHost)
 	defer hostLimiter.CloseHandle()
 	return ratelimit.Copy(
-		io.MultiWriter(dst, run.mainSendRateCounter, run.mainSendBitsCounter.GetCountingWriter()),
+		io.MultiWriter(dst, run.mainSendRateCounter, run.mainSendBytesCounter.GetCountingWriter()),
 		src,
 		[]ratelimit.Limiter{
 			ratelimit.NewCombinedLimiter(hostLimiter.Limiter, run.sharedSendLimiter),

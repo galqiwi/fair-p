@@ -39,6 +39,6 @@ func (run *Runner) handleHTTP(w http.ResponseWriter, r *http.Request, logger *za
 		return
 	}
 	logger.Info("HTTP response forwarded",
-		zap.Int64("bits_received", recv),
+		zap.Int64("bytes_received", recv),
 	)
 }

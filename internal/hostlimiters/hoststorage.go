@@ -44,7 +44,7 @@ func (s *HostLimiterStorage) GetGuaranteedThroughput() rate.Limit {
 	defer s.mu.RUnlock()
 
 	if len(s.limiters) == 0 {
-		return s.maxThroughput
+		return getLimit(int64(1), s.maxThroughput)
 	}
 	return getLimit(int64(len(s.limiters)), s.maxThroughput)
 }

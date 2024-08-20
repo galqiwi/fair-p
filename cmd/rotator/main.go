@@ -12,6 +12,8 @@ import (
 	"github.com/galqiwi/fair-p/internal/utils"
 )
 
+var bufferSize = 10 * 1024 * 1024
+
 func main() {
 	err := Main()
 	if err != nil {
@@ -41,10 +43,11 @@ func Main() error {
 	maxSizeBytes := args.maxSize * 1024 * 1024
 
 	remaining := maxSizeBytes
-	s := bufio.NewScanner(os.Stdin)
 
-	buf := make([]byte, 0, 64*1024)
-	s.Buffer(buf, 1024*1024)
+	s := bufio.NewScanner(bufio.NewReaderSize(os.Stdin, bufferSize))
+
+	buf := make([]byte, 0, bufferSize)
+	s.Buffer(buf, bufferSize)
 
 	for s.Scan() {
 		if int64(len(s.Text())) > remaining {

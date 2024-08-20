@@ -146,5 +146,5 @@ func getLimit(nHosts int64, maxThroughput rate.Limit) rate.Limit {
 	if nHosts <= 0 {
 		panic(fmt.Sprintf("invalid number of hosts: %d", nHosts))
 	}
-	return rate.Limit(float64(maxThroughput) / float64(nHosts))
+	return rate.Limit(float64(maxThroughput) / float64(nHosts+1))
 }

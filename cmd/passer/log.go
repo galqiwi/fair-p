@@ -37,8 +37,8 @@ func (run *Runner) logRuntimeInfo() {
 		zap.Float64("GuaranteedThroughput(recv) (MB/s)", float64(run.hostRecvLimiterStorage.GetGuaranteedThroughput()/1024/1024)),
 		zap.Int64("BytesSent", run.mainSendBytesCounter.Get()),
 		zap.Int64("BytesReceived", run.mainRecvBytesCounter.Get()),
-		zap.Int64("ConcurrentRemotes(send)", run.hostSendLimiterStorage.GetNHosts()),
-		zap.Int64("ConcurrentRemotes(recv)", run.hostRecvLimiterStorage.GetNHosts()),
+		zap.Int64("ConcurrentClients(send)", run.hostSendLimiterStorage.GetNHosts()),
+		zap.Int64("ConcurrentClients(recv)", run.hostRecvLimiterStorage.GetNHosts()),
 		zap.Int64("NumConcurrentRequests", run.concurrentRequests.Get()),
 		zap.Int("NumGoroutines", numGoroutines),
 		zap.Int64("MainRecvLimiterTokens", int64(run.mainRecvLimiter.Tokens())),
@@ -86,8 +86,8 @@ func (run *Runner) logRuntimeInfoHandler(w http.ResponseWriter, r *http.Request)
 	_, _ = fmt.Fprintf(w, "GuaranteedThroughput(recv): %.2f MB/s\n", float64(run.hostRecvLimiterStorage.GetGuaranteedThroughput()/1024/1024))
 	_, _ = fmt.Fprintf(w, "BytesSent: %d\n", run.mainSendBytesCounter.Get())
 	_, _ = fmt.Fprintf(w, "BytesReceived: %d\n", run.mainRecvBytesCounter.Get())
-	_, _ = fmt.Fprintf(w, "ConcurrentRemotes(send): %d\n", run.hostSendLimiterStorage.GetNHosts())
-	_, _ = fmt.Fprintf(w, "ConcurrentRemotes(recv): %d\n", run.hostRecvLimiterStorage.GetNHosts())
+	_, _ = fmt.Fprintf(w, "ConcurrentClients(send): %d\n", run.hostSendLimiterStorage.GetNHosts())
+	_, _ = fmt.Fprintf(w, "ConcurrentClients(recv): %d\n", run.hostRecvLimiterStorage.GetNHosts())
 	_, _ = fmt.Fprintf(w, "NumConcurrentRequests: %d\n", run.concurrentRequests.Get())
 	_, _ = fmt.Fprintf(w, "NumGoroutines: %d\n", numGoroutines)
 	_, _ = fmt.Fprintf(w, "MainRecvLimiterTokens: %d\n", int64(run.mainRecvLimiter.Tokens()))

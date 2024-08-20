@@ -45,7 +45,7 @@ func LogHttpRequest(logger *zap.Logger, r *http.Request) {
 		zap.String("method", r.Method),
 		zap.String("url", r.URL.String()),
 		zap.String("host", r.Host),
-		zap.String("remote_addr", r.RemoteAddr),
+		zap.String("client_addr", r.RemoteAddr),
 		zap.String("user_agent", r.UserAgent()),
 		zap.String("headers", strings.Join(headers, ", ")),
 	)

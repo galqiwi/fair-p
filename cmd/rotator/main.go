@@ -44,7 +44,7 @@ func Main() error {
 
 	remaining := maxSizeBytes
 
-	s := bufio.NewScanner(bufio.NewReaderSize(os.Stdin, bufferSize))
+	s := bufio.NewScanner(os.Stdin)
 
 	buf := make([]byte, 0, bufferSize)
 	s.Buffer(buf, bufferSize)

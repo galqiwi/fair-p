@@ -100,7 +100,7 @@ func (run *Runner) mainHandler(w http.ResponseWriter, r *http.Request) {
 
 	if strings.HasPrefix(r.URL.String(), "/register") {
 		logger.Info(
-			"Registered host",
+			fmt.Sprintf("Registered host (%v)", r.RemoteAddr),
 			zap.String("url", r.URL.String()),
 			zap.String("client", r.RemoteAddr),
 		)

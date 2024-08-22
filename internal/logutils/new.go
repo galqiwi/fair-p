@@ -43,6 +43,13 @@ func NewLogger(options ...zap.Option) (*zap.Logger, func() int, error) {
 		zap.NewAtomicLevelAt(zap.InfoLevel),
 	)
 
+	core = zapcore.NewSamplerWithOptions(
+		core,
+		time.Second,
+		10,
+		10,
+	)
+
 	// Build and return the logger
 	return zap.New(core, options...), getQueueSize, nil
 }

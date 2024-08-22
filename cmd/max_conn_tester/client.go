@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 func main() {
@@ -17,6 +18,10 @@ func main() {
 
 	for i := 0; i < *numRequests; i++ {
 		go sendReq(*serverAddrPtr, *proxyAddrPtr)
+	}
+
+	for {
+		time.Sleep(time.Hour)
 	}
 }
 

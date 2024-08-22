@@ -12,25 +12,3 @@ services:
       nofile:
         soft: 1000000
         hard: 1000000
-    sysctls:
-      fs.file-max: 2000000
-
-      net.ipv4.ip_local_port_range: "1024 65535"
-      net.ipv4.tcp_tw_recycle: "1"
-      net.ipv4.tcp_tw_reuse: "1"
-      net.ipv4.tcp_fin_timeout: "15"
-      net.ipv4.tcp_max_syn_backlog: "1000000"
-      net.ipv4.tcp_max_tw_buckets: "2000000"
-      net.core.somaxconn: "1000000"
-      net.core.netdev_max_backlog: "1000000"
-      net.core.rmem_max: "16777216"
-      net.core.wmem_max: "16777216"
-      net.ipv6.conf.all.max_desync_factor: "1"
-      net.ipv6.conf.all.accept_ra: "1"
-      net.ipv6.conf.all.accept_ra_defrtr: "1"
-      net.ipv6.conf.all.accept_ra_pinfo: "1"
-      net.ipv6.conf.all.accept_ra_rtr_pref: "1"
-      net.ipv6.conf.all.accept_redirects: "1"
-      net.ipv6.neigh.default.gc_thresh1: "500000"
-      net.ipv6.neigh.default.gc_thresh2: "1000000"
-      net.ipv6.neigh.default.gc_thresh3: "2000000"

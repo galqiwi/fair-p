@@ -19,7 +19,7 @@ func NewLogger(options ...zap.Option) (*zap.Logger, error) {
 		FlushInterval: time.Second * 10,
 	}
 
-	ws = zapcore.AddSync(NewAsyncWriter(ws, 256))
+	ws = zapcore.AddSync(NewAsyncWriter(ws, 1000000))
 
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "T",

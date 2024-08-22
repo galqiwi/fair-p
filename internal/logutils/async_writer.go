@@ -24,7 +24,10 @@ func NewAsyncWriter(ws zapcore.WriteSyncer, size int) (io.Writer, func() int) {
 func (s *asyncWriteSyncer) Write(bs []byte) (int, error) {
 	n := len(bs)
 
-	s.messageQueue <- bs
+	buf := make([]byte, len(bs))
+	copy(buf, bs)
+
+	s.messageQueue <- buf
 
 	return n, nil
 }

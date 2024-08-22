@@ -60,7 +60,6 @@ func handleConnection(conn net.Conn) {
 	defer concurrentConnectionsCounter.Sub(1)
 
 	defer conn.Close()
-	fmt.Printf("Client %s connected.\n", conn.RemoteAddr().String())
 
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {

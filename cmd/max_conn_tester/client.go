@@ -80,4 +80,6 @@ func sendReq(serverAddr, proxyAddr string) {
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
+
+	panic("done")
 }

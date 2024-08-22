@@ -33,7 +33,7 @@ func sendReq(serverAddr, proxyAddr string) {
 		panic(err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		panic(err)
+		panic(resp.StatusCode)
 	}
 
 	pipeReader, pipeWriter := io.Pipe()

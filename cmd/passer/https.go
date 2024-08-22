@@ -18,6 +18,7 @@ func (run *Runner) getNetwork() string {
 }
 
 func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
+	start := time.Now()
 	run.concurrentRequests.Add(1)
 	defer run.concurrentRequests.Sub(1)
 
@@ -35,6 +36,8 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, logge
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
+	dialDuration := time.Since(start)
+
 	w.WriteHeader(http.StatusOK)
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
@@ -48,7 +51,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, logge
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
-	logger.Info("Tunnel established")
+	logger.Info("Tunnel established", zap.Duration("duration", dialDuration))
 
 	sentChan := make(chan int64, 1)
 	recvChan := make(chan int64, 1)

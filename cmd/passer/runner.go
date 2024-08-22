@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/galqiwi/fair-p/internal/hostlimiters"
+	"github.com/galqiwi/fair-p/internal/logutils"
 	"github.com/galqiwi/fair-p/internal/rate_counter"
 	"github.com/galqiwi/fair-p/internal/ratelimit"
 	"net/http"
@@ -43,7 +44,7 @@ func NewRunner(a args) (*Runner, error) {
 	healthLimit := rate.Every(time.Second)
 	healthBurst := 3
 
-	logger, err := utils.NewLogger()
+	logger, err := logutils.NewLogger()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func (run *Runner) mainHandler(w http.ResponseWriter, r *http.Request) {
 
 	logger := run.logger.With(zap.String("trace_id", traceId.String()))
 
-	utils.LogHttpRequest(logger, r)
+	logutils.LogHttpRequest(logger, r)
 
 	if r.Method == http.MethodConnect {
 		run.handleTunneling(w, r, logger)

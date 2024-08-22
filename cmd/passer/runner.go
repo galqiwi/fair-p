@@ -19,6 +19,7 @@ import (
 type Runner struct {
 	runtimeLogInterval time.Duration
 	port               int
+	noIPv4             bool
 
 	concurrentRequests       *utils.Counter
 	hostHealthLimiterStorage *hostlimiters.HostLimiterStorage
@@ -49,6 +50,7 @@ func NewRunner(a args) (*Runner, error) {
 	return &Runner{
 		runtimeLogInterval: a.runtimeLogInterval,
 		port:               a.port,
+		noIPv4:             a.noIPv4,
 
 		concurrentRequests:       utils.NewCounter(),
 		hostHealthLimiterStorage: hostlimiters.NewHostLimiterStorage(healthLimit, healthBurst),

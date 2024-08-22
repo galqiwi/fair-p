@@ -22,6 +22,7 @@ func (run *Runner) handleHTTP(w http.ResponseWriter, r *http.Request, logger *za
 	logger.Info("Handling HTTP request")
 
 	// TODO: upload limiter?
+	// TODO: noIPv4
 	resp, err := http.DefaultTransport.RoundTrip(r)
 	if err != nil {
 		logger.Info("RoundTrip error", zap.String("err", err.Error()))

@@ -10,6 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
+func (run *Runner) getNetwork() string {
+	if run.noIPv4 {
+		return "tcp6"
+	}
+	return "tcp"
+}
+
 func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 	run.concurrentRequests.Add(1)
 	defer run.concurrentRequests.Sub(1)
@@ -22,7 +29,7 @@ func (run *Runner) handleTunneling(w http.ResponseWriter, r *http.Request, logge
 		zap.String("client", r.RemoteAddr),
 	)
 
-	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
+	destConn, err := net.DialTimeout(run.getNetwork(), r.Host, 10*time.Second)
 	if err != nil {
 		logger.Info("Error dialing destination", zap.String("err", err.Error()))
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)

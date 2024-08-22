@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/galqiwi/fair-p/internal/utils"
@@ -23,7 +24,7 @@ func Main() error {
 	// Listen for incoming connections.
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		return fmt.Errorf("error creating listener: %v", err)
+		panic(err)
 	}
 	defer listener.Close()
 
@@ -46,8 +47,7 @@ func Main() error {
 		// Wait for a connection.
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error accepting connection: %v\n", err)
-			continue
+			panic(err)
 		}
 
 		// Handle the connection in a new goroutine.
@@ -65,21 +65,19 @@ func handleConnection(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		receivedText := scanner.Text()
-		fmt.Printf("Received: %s\n", receivedText)
 
 		// Echo the received text back to the client.
 		_, err := conn.Write([]byte(receivedText + "\n"))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing to connection: %v\n", err)
-			return
+			panic(err)
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading from connection: %v\n", err)
+		panic(err)
 	}
 
-	fmt.Printf("Client %s disconnected.\n", conn.RemoteAddr().String())
+	panic(errors.New("failed"))
 }
 
 func main() {

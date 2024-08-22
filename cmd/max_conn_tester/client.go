@@ -14,7 +14,7 @@ import (
 func sendReq(serverAddr, proxyAddr string) {
 	proxyConn, err := net.Dial("tcp", proxyAddr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error connecting to proxy: %v\n", err)
+		panic(err)
 		os.Exit(1)
 	}
 	defer proxyConn.Close()
@@ -30,19 +30,17 @@ func sendReq(serverAddr, proxyAddr string) {
 
 	resp, err := http.ReadResponse(bufio.NewReader(proxyConn), connectReq)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading response from proxy: %v\n", err)
-		os.Exit(1)
+		panic(err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		fmt.Fprintf(os.Stderr, "Proxy returned non-200 status: %v\n", resp.Status)
-		os.Exit(1)
+		panic(err)
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
 
 	go func() {
 		for {
-			fmt.Fprintf(pipeWriter, "*")
+			fmt.Fprintf(pipeWriter, "*\n")
 			time.Sleep(time.Millisecond * 100)
 		}
 	}()
@@ -52,22 +50,20 @@ func sendReq(serverAddr, proxyAddr string) {
 		message := scanner.Text()
 		_, err := proxyConn.Write([]byte(message + "\n"))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing to connection: %v\n", err)
-			os.Exit(1)
+			panic(err)
 		}
 
 		responseScanner := bufio.NewScanner(proxyConn)
 		if responseScanner.Scan() {
-			response := responseScanner.Text()
-			fmt.Printf("Received: %s\n", response)
+			_ = responseScanner.Text()
 		}
 
 		if err := responseScanner.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading from connection: %v\n", err)
+			panic(err)
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading from stdin: %v\n", err)
+		panic(err)
 	}
 }

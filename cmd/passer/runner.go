@@ -35,6 +35,8 @@ type Runner struct {
 	sharedRecvLimiter        ratelimit.Limiter
 	mainRecvRateCounter      *rate_counter.RateCountingWriter
 	mainRecvBytesCounter     *utils.Counter
+
+	getLoggerQueueSize func() int
 }
 
 func NewRunner(a args) (*Runner, error) {
@@ -44,7 +46,7 @@ func NewRunner(a args) (*Runner, error) {
 	healthLimit := rate.Every(time.Second)
 	healthBurst := 3
 
-	logger, err := logutils.NewLogger()
+	logger, queueSizeGetter, err := logutils.NewLogger()
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +68,8 @@ func NewRunner(a args) (*Runner, error) {
 		sharedRecvLimiter:        rate.NewLimiter(a.maxThroughput/2, burstSize),
 		mainRecvRateCounter:      rate_counter.NewRateCountingWriter(rateCounterDuration),
 		mainRecvBytesCounter:     utils.NewCounter(),
+
+		getLoggerQueueSize: queueSizeGetter,
 	}, nil
 }
 

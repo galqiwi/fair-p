@@ -10,13 +10,15 @@ type asyncWriteSyncer struct {
 	messageQueue chan []byte
 }
 
-func NewAsyncWriter(ws zapcore.WriteSyncer, size int) io.Writer {
+func NewAsyncWriter(ws zapcore.WriteSyncer, size int) (io.Writer, func() int) {
 	output := &asyncWriteSyncer{
 		inner:        ws,
 		messageQueue: make(chan []byte, size),
 	}
 	go output.writeLoop()
-	return output
+	return output, func() int {
+		return len(output.messageQueue)
+	}
 }
 
 func (s *asyncWriteSyncer) Write(bs []byte) (int, error) {

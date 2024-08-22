@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func NewLogger(options ...zap.Option) (*zap.Logger, error) {
+func NewLogger(options ...zap.Option) (*zap.Logger, func() int, error) {
 	// Exists infinitely, no ws.Stop() call
 	var ws zapcore.WriteSyncer = os.Stdout
 
@@ -19,7 +19,8 @@ func NewLogger(options ...zap.Option) (*zap.Logger, error) {
 		FlushInterval: time.Second * 10,
 	}
 
-	ws = zapcore.AddSync(NewAsyncWriter(ws, 1000000))
+	s, getQueueSize := NewAsyncWriter(ws, 1000000)
+	ws = zapcore.AddSync(s)
 
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "T",
@@ -43,7 +44,7 @@ func NewLogger(options ...zap.Option) (*zap.Logger, error) {
 	)
 
 	// Build and return the logger
-	return zap.New(core, options...), nil
+	return zap.New(core, options...), getQueueSize, nil
 }
 
 func LogHttpRequest(logger *zap.Logger, r *http.Request) {

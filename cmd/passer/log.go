@@ -40,6 +40,7 @@ func (run *Runner) logRuntimeInfo() {
 		zap.Int64("ConcurrentClients(send)", run.hostSendLimiterStorage.GetNHosts()),
 		zap.Int64("ConcurrentClients(recv)", run.hostRecvLimiterStorage.GetNHosts()),
 		zap.Int64("NumConcurrentRequests", run.concurrentRequests.Get()),
+		zap.Int("LoggerQueueSize", run.getLoggerQueueSize()),
 		zap.Int("NumGoroutines", numGoroutines),
 		zap.Int64("MainRecvLimiterTokens", int64(run.mainRecvLimiter.Tokens())),
 		zap.Int64("MainSendLimiterTokens", int64(run.mainSendLimiter.Tokens())),
@@ -89,6 +90,7 @@ func (run *Runner) logRuntimeInfoHandler(w http.ResponseWriter, r *http.Request)
 	_, _ = fmt.Fprintf(w, "ConcurrentClients(send): %d\n", run.hostSendLimiterStorage.GetNHosts())
 	_, _ = fmt.Fprintf(w, "ConcurrentClients(recv): %d\n", run.hostRecvLimiterStorage.GetNHosts())
 	_, _ = fmt.Fprintf(w, "NumConcurrentRequests: %d\n", run.concurrentRequests.Get())
+	_, _ = fmt.Fprintf(w, "LoggerQueueSize: %d\n", run.getLoggerQueueSize())
 	_, _ = fmt.Fprintf(w, "NumGoroutines: %d\n", numGoroutines)
 	_, _ = fmt.Fprintf(w, "MainRecvLimiterTokens: %d\n", int64(run.mainRecvLimiter.Tokens()))
 	_, _ = fmt.Fprintf(w, "MainSendLimiterTokens: %d\n", int64(run.mainSendLimiter.Tokens()))

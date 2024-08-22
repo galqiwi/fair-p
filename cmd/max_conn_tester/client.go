@@ -2,20 +2,29 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 )
 
-func sendReq(serverAddr, proxyAddr string) {
+func main() {
+	serverAddrPtr := flag.String("server", "", "Server address to send the request to")
+	proxyAddrPtr := flag.String("proxy", "", "Proxy address to route the request through")
+	flag.Parse()
+}
+
+func main() {
+
+	serverAddr := *serverAddrPtr
+	proxyAddr := *proxyAddrPtr
+
 	proxyConn, err := net.Dial("tcp", proxyAddr)
 	if err != nil {
 		panic(err)
-		os.Exit(1)
 	}
 	defer proxyConn.Close()
 

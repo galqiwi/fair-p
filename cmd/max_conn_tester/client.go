@@ -3,25 +3,24 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 func main() {
 	serverAddrPtr := flag.String("server", "", "Server address to send the request to")
 	proxyAddrPtr := flag.String("proxy", "", "Proxy address to route the request through")
+	numRequests := flag.Int("n_requests", 1, "Number of requests")
 	flag.Parse()
+
+	for i := 0; i < *numRequests; i++ {
+		go sendReq(*serverAddrPtr, *proxyAddrPtr)
+	}
 }
 
-func main() {
-
-	serverAddr := *serverAddrPtr
-	proxyAddr := *proxyAddrPtr
-
+func sendReq(serverAddr, proxyAddr string) {
 	proxyConn, err := net.Dial("tcp", proxyAddr)
 	if err != nil {
 		panic(err)
@@ -47,12 +46,13 @@ func main() {
 
 	pipeReader, pipeWriter := io.Pipe()
 
-	go func() {
-		for {
-			fmt.Fprintf(pipeWriter, "*\n")
-			time.Sleep(time.Millisecond * 100)
-		}
-	}()
+	_ = pipeWriter
+	//go func() {
+	//	for {
+	//		fmt.Fprintf(pipeWriter, "*\n")
+	//		time.Sleep(time.Millisecond * 100)
+	//	}
+	//}()
 
 	scanner := bufio.NewScanner(pipeReader)
 	for scanner.Scan() {

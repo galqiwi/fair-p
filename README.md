@@ -11,6 +11,7 @@ Fair-p is an HTTP(S) proxy with throughput guarantees.
 ### Setup
 
 **Setup proper linux limits (optional)**
+
 Run [this](https://gist.githubusercontent.com/galqiwi/9b90ac2ea2093c6dbec83dabb7162cce/raw/beab3b6d70acd00a5e7975996d80c9c7e343209e/setup-1m-sockets.sh) script.
 
 **Clone the Repository:**

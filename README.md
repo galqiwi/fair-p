@@ -24,6 +24,19 @@ Run [this](https://gist.githubusercontent.com/galqiwi/9b90ac2ea2093c6dbec83dabb7
 
 ### Build and Run
 
+**Using Docker:**
+
 ```docker compose build && docker compose up -d```
+
+**Using Go (without Docker):**
+
+Prerequisites:
+- Go 1.22.1 or later
+
+Build and run:
+```bash
+go build -o fair-p ./cmd/passer
+./fair-p --port 8080 --max-throughput 100
+```
 
 Your Fair-p proxy should now be up and running!
